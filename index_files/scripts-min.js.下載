@@ -1,0 +1,5298 @@
+/*******************************************************************
+*
+*	Hepatitis C Online
+*
+*	Andrew Karpenko
+*	206-221-8524
+*	akarpy@uw.edu	
+*
+********************************************************************/
+//IE8 Scripts
+if (!window.console) console = {log: function(){}};
+
+var iframes = new Array();
+
+var alphabet_offset = 0;
+var url_to_open;
+var ajax;
+
+var colorbox_max_width = "75%";
+
+/*
+	Setup surveys structure
+ */
+window.IDEA_SURVEYS = {
+	"SCHEMA": Array(),
+	"DATA": Array()
+}
+
+////////////////////////////////////////////////////
+// IE11 Polyfills
+
+if (!String.prototype.includes) {
+	String.prototype.includes = function(search,start) {
+		'use strict';
+
+		if (search instanceof RegExp) {
+			throw TypeError('first argument must not be a RegExp');
+		}
+		if (start === undefined) { start = 0; }
+		return this.indexOf(search, start) !== -1;
+	};
+}
+
+if (!Array.prototype.includes) {
+	Object.defineProperty(Array.prototype, "includes", {
+		enumerable: false,
+		value: function (obj) {
+			var newArr = this.filter(function(el){
+				return el == obj;
+			});
+			return newArr.length > 0;
+		}
+	});
+}
+
+////////////////////////////////////////////////////
+
+$(document).ready(function() {
+	document.addEventListener("trackEvent", (ev) => {
+		const { category, action, label } = ev?.detail
+		if (Boolean(category) && Boolean(action)) {
+			trackEvent(category, action, label)
+		}
+	}, false)
+
+	$("[dt-event-click]").on('click', (e) => {
+		const val = e.target.getAttribute("dt-event-click") || e.currentTarget.getAttribute("dt-event-click")
+		trackEvent('click-event', val)
+	})
+	$('img.user-icon').on("error", function() {
+		console.log("image error");
+		//$(this).attr('src', '/css/images/avatars/default.png');
+	});
+
+	if ($("body").hasClass("page-drug-view")) {
+		setupTreatmentPage();
+	}
+
+	//Mobile test
+	if ($("body").hasClass("mobile")) {
+		//Automatically assume sidebar menu is closed
+		$("#page").addClass("menu-closed");
+
+		/* Mobile */
+
+		colorbox_max_width = "100%";
+
+		$(".level1-navigation .section-menu .link").click(function() {
+			$("body").toggleClass("menu-open");
+			if ($("body").hasClass("menu-open")) {
+				setTimeout("activateSearch();", 100);
+				setTimeout("checkMobileMenuHeight();", 100);
+			} else {
+				setTimeout("deactivateSearch();", 100);
+				setTimeout("checkMobileMenuHeight();", 100);
+				$("#user-navigation").slideUp(0);
+			}
+		});
+
+		$(".level1-navigation .submenu-trigger").click(function(e) {
+			e.stopPropagation();
+			e.preventDefault();
+			$(this).parent().parent("li").siblings().not($(this)).removeClass("hovered");
+			$(this).parent().parent("li").find("div li.hovered").removeClass("hovered");
+			$(this).parent().parent("li").toggleClass("hovered");
+
+			checkMobileMenuHeight();
+		});
+
+		$(".level1-navigation .section.active-trail > a.active-trail > .submenu-trigger").click();
+		$(".level1-navigation .level1.active-trail > a.active-trail > .submenu-trigger").click();
+
+		$(".major-section-core-concepts .core-concept-subsection .section-title").click(function() {
+			$(this).parent().toggleClass("open");
+			$(".core-concept-subsection.open .level4s .flourish-embed").each(function() {
+				$(this).empty();
+				if (window.Flourish) {
+					Flourish.loadEmbed($(this)[0])
+				}
+			});
+		});
+
+
+		$(".major-section-core-concepts .core-concept-subsection").first().addClass("open");
+
+		$("#page-content").on("click", ".ref-cats .heading,.trial-cats .heading", function() {
+			$(this).parent().toggleClass("open");
+		});
+
+		$("#page-content").on("click", ".ref-cats .cat-select", function() {
+			$(this).parents("div.ref-cats").toggleClass("open");
+		});
+
+		$("#page-content").on("click", ".trial-cats .cat-select", function() {
+			$(this).parents("div.trial-cats").toggleClass("open");
+		});
+
+		$(".question-list > .toggle").click(function() {
+			$("body").toggleClass("sidebar-right-open");
+		});
+
+		$(".question-list").affix({
+			offset: {
+				top: 50,
+			}
+		});
+
+		//Disable tool hover events
+		setTimeout('$("input.tool-input").unbind("mouseenter mouseleave");', 500);
+
+		$("table").css("width", "auto");
+		$("table").wrap('<div class="table-responsive">');
+
+
+		$(window).on("orientationchange", function() {
+			$("body.mobile .inline-doc-series .document").width($(window).width() - 24);
+			$("body.mobile .inline-doc-series").width($(window).width() - 12);
+		});
+
+	} else {
+
+		if ($("body.action-custom").length) {
+			$(".level1-navigation").affix({
+				offset: {
+					top: 45,
+				}
+			});
+
+			if ($("body.custom-access-public").length) {
+				$(".level1-navigation .section-menu .link").click(function() {
+					$("body").toggleClass("menu-open");
+				});
+			}
+
+		} else {
+			$(".level1-navigation").affix({
+				offset: {
+					top: 45,
+				}
+			});
+		}
+
+		if ($("#page.page-drugs").length) {
+
+		} else if ($("#page-toc").length>0){
+			//Only try to scroll spy when there is a page toc element
+			if(typeof(bootstrap)!="undefined") {
+				scrollSpy = new bootstrap.ScrollSpy(document.body, {
+					target: '#page-toc',
+					rootMargin: "0 0 -25%",
+					threshold:[.1]
+				});
+
+				document.body.addEventListener("activate.bs.scrollspy", (ev) => {
+					console.log("scrollspy target", ev.target);
+					console.log("scrollspy currenttarget", ev.currentTarget);
+				});
+			}else{
+				$('body').scrollspy({ target: '.page-toc', offset: 100 });
+			}
+		}
+
+		//Adjust drop down menu height
+		$(".level1-navigation li.has-submenu").each(function() {
+			var m = 0;
+			var h = 40;
+			$(this).find(".subsubmenu:first").each(function() {
+				var c = $(this).find("li").length;
+				var total = 0;
+				$(this).find("li").each(function() {
+					total += $(this).height();
+				});
+				h = Math.round(total / c);
+				if (c > m) {
+					m = c;
+				}
+
+			});
+			var max = $(window).height() - 75;
+			$(this).find("div.submenu").css('min-height', Math.min((200 + m * (h + 14)), max) + 'px');
+		});
+
+		$("html").click(function() {
+			$("#user-navigation").not(":animated").slideUp(250);
+		});
+
+		//$("a.document.graphic-content").tooltip({title: "May not be appropriate for viewing in a public setting.",placement: "top", container: 'body'});
+	}
+
+	$("ul.main-menu li.section-resources a").unbind("click");
+	$("ul.main-menu").on("click", "li.section.resources a", function(e) {
+		e.preventDefault();
+		openPopup($(this), e);
+	});
+
+	$("#sidebar").affix({
+		offset: {
+			top: 50,
+		}
+	});
+
+	//Display notifications
+	displayPageNotifications();
+
+	setupReferenceCategories();
+
+	$("#page.page-expert-opinions").on("click", "#category-holder .level1 > a,#category-holder .level2 > a,#cases-holder .case.layout-list a.case-link", function(e) {
+
+		e.preventDefault();
+
+		if ($(this).parent().hasClass("active-trail")) {
+			//Load this module	
+		} else {
+			if ($(this).parents("#category-holder").length) {
+				$("#category-holder .level2").removeClass("active-trail");
+				$(this).parent().siblings().removeClass("active-trail");
+				$(this).parent().addClass("active-trail");
+			}
+		}
+
+		var loc_url = $(this).attr("href");
+		if (url.indexOf("/page/") != -1) {
+			url = loc_url.replace(base_url + "page", base_url + "ajax/page");
+		}
+
+		url = url + "";
+
+		expertOpinionsLoadUrl(url, loc_url);
+	});
+
+	$("#page.section-qb").on("click", "#category-holder .level1 > a", function(e) {
+
+		e.preventDefault();
+
+		if (!$(this).parent().hasClass("active-trail")) {
+			$(this).parent().siblings().removeClass("viewing-trail");
+			$(this).parent().toggleClass("viewing-trail");
+		}
+	});
+
+	if ($("#page.page-expert-opinions").length) {
+		window.onpopstate = function(event) {
+			var loc = "" + document.location;
+			if (loc.includes("page/challenges/expert-opinions/") || loc.includes("page/qb/")) {
+
+				var lookup_loc = loc.replace(document.location.protocol + "//" + document.location.host, "");
+
+				console.log(document.location.protocol + "//" + document.location.host);
+				console.log(lookup_loc);
+
+				$('#category-holder .level1 > a,#category-holder .level2 > a,#cases-holder .case.layout-list a.case-link').parent().removeClass("active-trail");
+				$('#category-holder .level1 > a[href$="' + lookup_loc + '"],#category-holder .level2 > a[href$="' + lookup_loc + '"],#cases-holder .case.layout-list a.case-link[href$="' + lookup_loc + '"]').parent().addClass("active-trail");
+				expertOpinionsLoadUrl(loc, "");
+			}
+		}
+	}
+
+	if ($("#page.page-expert-opinions,#page.section-qb").length) {
+		var count = 0;
+		$("#category-holder .level1").each(function() {
+			var new_count = $(this).find(".level2").length;
+			if (new_count > count) {
+				count = new_count;
+			}
+		});
+		var c_height = $("#category-holder").height() + 50;
+		$("#category-holder").height(c_height + count * 25);
+
+		$("#category-holder > .toggle").click(function() {
+			$("body").toggleClass("sidebar-open");
+		});
+	}
+
+	//Open regimens tables when first looking at them through a self-study course
+	if ($("body.action-custom.progress-pending").length) {
+		$(".regimens-tables.toggleable").addClass("open").removeClass("closed");
+	}
+	$("body").on("click", ".regimens-tables.toggleable .regimens > h3", function() {
+		$(this).parents(".regimens-tables").toggleClass("open");
+		$(this).parents(".regimens-tables").toggleClass("closed");
+	});
+
+	$(".alert .close-bs").click(function() {
+		$(this).parent().slideUp(500);
+	});
+
+	$('[data-toggle="tooltip"],abbr,.has-tooltip').tooltip({ html: true, container: 'body' });
+	$('[data-toggle="popover"]').popover();
+
+	$('sup.footnote').popover({
+		trigger: "hover",
+		html: true,
+	});
+
+	//Login
+	$("#login-form").submit(function(e) {
+		e.preventDefault();
+		$(this).find("button").button('loading');
+		$(this).find(".alert").slideUp(500);
+		var form = $(this);
+
+		if ($("#login-form #forward_to_signin").val() == "1") {
+			//We need to load the page using HTTPS in order to be able to sign in
+			document.location = document.location.href.replace("http://", "https://");
+			return false;
+		}
+
+		$("#login-window").addClass("loading");
+
+		ajax = $.post(base_url + "json.php", form.serialize(), function(data) {
+
+			//Handle response
+			if (data.status > 0) {
+				//There was some kind of error
+				if (data.result == "password-reset-required") {
+
+					//Instruct user to begin reset pasword flow
+					$("#wrap").addClass("blurred");
+					//colorize
+					bootbox.confirm({
+						title: 'You must reset your password',
+						message: '<div id="reset-password-required"><div class="row"><div class="col-xs-12 col-sm-10 col-sm-offset-1"><h3>' + $("#login-form #sign_in_email").val() + ' must reset the password to sign-in</h3><p class="lead">To improve the security of your account, you must reset your password in-order to sign in.</p></div></div><form name="password-reset-form" method="post" id="password-reset-form" action="' + base_url + 'process.php"><input type="hidden" name="action" value="userRetrieve" /><input type="hidden" name="email" value="' + $("#login-form #sign_in_email").val() + '" /></form></div>',
+						size: 'large',
+						buttons: {
+							confirm: {
+								label: 'Reset Password <span class="glyphicon glyphicon-chevron-right"></span>',
+								className: 'btn-primary'
+							},
+							cancel: {
+								label: 'Cancel',
+								className: 'btn-default'
+							}
+						},
+						callback: function(result) {
+							if (result) {
+								//Initiate result
+								$("#password-reset-form").submit();
+							} else {
+								$("#wrap").removeClass("blurred");
+							}
+						}
+					});
+
+				} else {
+					//If we don't know how to handle this, display error	
+					form.find(".alert .alert-title").html(data.title);
+					form.find(".alert .alert-text").html(data.text);
+					form.find(".alert").slideDown(500);
+				}
+
+				$("#login-window").removeClass("loading");
+				$("form button").button('reset');
+			} else if (data.status == 0) {
+				document.location.reload();
+			} else {
+				$("#login-window").removeClass("loading");
+				//Unidentified error
+				form.find(".alert .alert-title").html("Unidentified Error");
+				form.find(".alert .alert-text").html("An error occurred. Please try again later.");
+				form.find(".alert").slideDown(500);
+				$("form button").button('reset');
+			}
+
+		}, "json").fail(function() {
+			//Timeout
+			$("form button").button('reset');
+			//Unidentified error
+			form.find(".alert .alert-title").html("Unidentified Error");
+			form.find(".alert .alert-text").html("An error occurred. Please try again later.");
+			form.find(".alert").slideDown(500);
+			$("#login-window").removeClass("loading");
+		}).always(function() {
+			//$("#login-window").addClass("loading");
+		});
+		return false;
+	});
+
+	$(".level3-calculator .section-calculator .section h3.title").click(function() {
+		$(this).parent().toggleClass("open");
+	});
+
+	$(".page-bibliography #toc").appendTo($("#sidebar .inner"));
+	$(".page-bibliography #toc li").hover(function() {
+		$(".page-bibliography #toc li").removeClass("highlight").addClass("supress");
+		var level2 = $(this).attr('data-level2');
+		$(".page-bibliography #toc li[data-level2='" + level2 + "']").addClass("highlight").removeClass("supress");
+	}).mouseout(function() {
+		$(".page-bibliography #toc li").removeClass("highlight").removeClass("supress");
+	});
+
+	$("#page-content .inner .level4s-full-text a").not(".document").not(".link").not(".no-popup").not(".document-series").click(function(e) {
+
+		url_to_open = $(this).attr('href');
+		//Don't open local links in popups
+		var local = false;
+		if (url_to_open.indexOf(window.location.host) != -1 || url_to_open.indexOf(live_domain) != -1) {
+			local = true;
+		}
+
+		if ($(this).attr("target") == "_self") {
+			local = true;
+		}
+
+		if (!local) {
+			e.preventDefault();
+
+			//Track GA outbound link
+			// abandon if analytics is not available
+			if (typeof ga !== "function") {
+				console.log("no GA outside link");
+				openRef(url_to_open);
+				return false;
+			};
+
+			ga('send', 'event', 'outbound', 'click', url_to_open,
+				{
+					'hitCallback': function() {
+
+					}
+				});
+
+			openRef(url_to_open);
+			return false;
+		} else {
+			//Local link
+			console.log("Local link");
+			return true;
+		}
+	});
+
+	$("body").on("click", ".popover .references .link", function(e) {
+		e.preventDefault();
+		openRef($(this).attr('href'));
+		return false;
+	});
+
+	$("body").on("click", ".page-expert-opinions .ref .link", function(e) {
+		e.preventDefault();
+		openRef($(this).attr('href'));
+		return false;
+	});
+
+	$("body").on("click", ".field-clinicaltrialsgov a", function(e) {
+		return openPopup($(this), e);
+	});
+
+	if ($("#page-content .inner .treatment .treatment-tabs").length) {
+		if (window.location.hash) {           // do the test straight away
+			window.scrollTo(0, 0);     // execute it straight away
+			setTimeout(function() {
+				window.scrollTo(0, 0); // run it a bit later also for browser compatibility
+			}, 250);
+			if (navigator.userAgent.match(/MSIE 8/i)) {
+				setTimeout(function() {
+					window.scrollTo(0, 0); // run it a bit later also for browser compatibility
+				}, 1000);
+			}
+		}
+	}
+
+	$("#page-content .inner .treatment .drugs-field a[href!=''][href]").not(".document").not(".no-popup").not(".link").not(".image").not(".document-series").not(".image-series").addClass("popup").click(function(e) {
+		openPopup($(this), e);
+	});
+
+	$("#page-content .inner .content a[href!=''][href]").filter(function() {
+		return this.hostname && this.hostname !== location.hostname;
+	}).not(".document").not(".no-popup").not(".link").not(".image").not(".document-series").not(".image-series").not(".pres-link-no-trial").not(".pres-link").addClass("popup").click(function(e) {
+		e.preventDefault();
+		var newWin = window.open($(this).attr('href'));
+		return false;
+	});
+
+	contributorPopoverSetup();
+	drugPopoverSetup();
+
+	$(".term.layout-inline a.term-link").popover({ trigger: 'hover', placement: 'top', container: "body", html: true, content: function() { return $(this).siblings(".data-content").html() } });
+
+	$(".button-hcv-guidelines").click(function(e) {
+		e.preventDefault();
+		var newWin = window.open($(this).attr('href'), 'window', 'status=1,toolbar=1,scrollbars=1,resizable=1');
+		return false;
+	});
+
+	/*$(document).ajaxError(function(e, xhr, settings, exception) {
+		alert(exception);
+	}); */
+
+	$("h2.section-title").first().addClass("first");
+
+	$("#progress-tracker a").popover({ trigger: 'hover', placement: 'top', container: "body", html: true, content: function() { return $(this).parent().find(".data-content").html() } });
+
+	//User Progress
+	$("#progress table td.info a").popover({ trigger: 'hover', placement: 'top', container: "body", html: true, content: function() { return $(this).parent().find(".data-content").html() } });
+
+	$(".page-navigation .next .button").tooltip({ html: true });
+
+	/* Sidebar dropdowns */
+	/*$("#sidebar li.level3").not(".active-trail").hover(
+		function(e){
+			if($(this).find(".level4s").length){
+				$(this).find(".level4s").stop(true,true).show(300);
+				//setTimeout("checkHeight(true);",300);
+			}
+		},
+		function(e){
+			if($(this).find(".level4s").length){
+				$(this).find(".level4s").stop(true,true).hide(300);
+				setTimeout("checkHeight(true);",300);
+			}
+		}
+	);*/
+	$("#sidebar li.level3").not(".active-trail").find(".level4s").hide(0);
+
+	setTimeout("checkHeight(true);", 100);
+
+	//Allign height of homepage and login-window
+	if ($("body.alternate #home-page").height() < $("body.alternate #login-window").height() + 30) {
+		$("body.alternate #home-page").height($("body.alternate #login-window").height() + 30);
+	}
+
+	//320
+	//Always display the figures
+	/*$(document).scroll(function(){
+		//pn_timeout = setTimeout("checkPageNavigation();",100);
+		if($("#reading-pane").is(":visible")){
+			//Move the figures along with the page
+			pn_timeout = setTimeout("figuresScroll();",500);
+		}
+	}).scroll();*/
+
+	//$("#page").fadeTo(0,0);
+	//$("h1.title,.subtitle").fadeTo(0,0);
+	//setTimeout('$("h1.title,.subtitle").fadeTo(500,1.0);',250);
+	//setTimeout('$("#page").fadeTo(500,1.0);',500);
+
+	//Wrap all LIs with DIVs to prevent documents from being pushed up the tree too high
+	// $(".level4s li .document").closest("li").wrap('<div class="temp-wrapper" />');
+
+	//Move documents into main body for full screen viewing
+	documentsFullScreen(".level4s .document");
+	documentsFullScreen(".level3 .document");
+	documentsFullScreen(".treatment .drugs-field .document");
+	documentsFullScreen(".questions .fieldset .background .document");
+	tablesFullScreen(".level4s .inline-table-link");
+
+	animationsFullScreen(".level4s .animation");
+
+	$(".regimens.regimens-level4s .regimen-group-0 .regimen-list-0 .regimen-note").each(function() {
+		$(this).appendTo($(this).parents(".regimen-group-0"));
+	});
+
+	//Adjust regimen to plural
+	$(".regimens .regimen-group").each(function() {
+		var span = $(this).find(".regimen.same-title").first().prev(".regimen.has-title").find(".regimen-title span.recommended");
+		if (span) {
+			var title = span.text();
+			span.text(title.replace("regimen", "regimens"));
+		}
+	});
+
+	$("a.document,.document a.image,.term a.term-link.has-image").not(".document-series").not(".flourish").not(".pdf-api").not(".articulate").colorbox({
+		onComplete: function() { colorBoxSetup(); },
+		title: function() {
+			var desc = $(this).attr('alt');
+			var title = $(this).attr('title');
+			if (title == "") {
+				title = $(this).attr('data-original-title');
+			}
+			return '<strong>' + title + '</strong><br />' + desc;
+		},
+		maxWidth: colorbox_max_width,
+		maxHeight: "100%"
+	});
+
+	/*
+		FLOURISH SETUP for COLORBOX
+	 */
+	$(".section-figures .documents .document.flourish a.image").not(".document-series").colorbox({
+		onComplete: function() { colorBoxSetup("flourish"); },
+		inline: true,
+		href: function() {
+			return $(this).find(".flourish-embed");
+		},
+		innerWidth: colorbox_max_width,
+		title: function() {
+			var desc = $(this).attr('alt');
+			var title = $(this).attr('title');
+			if (title == "") {
+				title = $(this).attr('data-original-title');
+			}
+			return '<strong>' + title + '</strong><br />' + desc;
+		},
+		maxWidth: colorbox_max_width,
+		maxHeight: "100%"
+	});
+	/* PDF API colorbox*/
+	$(".section-figures .documents .document.pdf-api a.image").not(".document-series").colorbox({
+		onComplete: function() { colorBoxSetup("pdf-api"); },
+		inline: true,
+		href: function() {
+			return $(this).find(".pdf-api-embed");
+		},
+		innerWidth: colorbox_max_width,
+		title: function() {
+			var desc = $(this).attr('alt');
+			var title = $(this).attr('title');
+			if (title == "") {
+				title = $(this).attr('data-original-title');
+			}
+			return '<strong>' + title + '</strong><br />' + desc;
+		},
+		maxWidth: colorbox_max_width,
+		maxHeight: "100%"
+	});
+
+	/* articulate colorbox (zip file stories)*/
+	$(".section-figures .documents .document.articulate a.image").not(".document-series").colorbox({
+		onComplete: function() { colorBoxSetup("articulate"); },
+		iframe: true,
+		innerWidth: colorbox_max_width,
+		title: function() {
+			var desc = $(this).attr('alt');
+			var title = $(this).attr('title');
+			if (title == "") {
+				title = $(this).attr('data-original-title');
+			}
+			return '<strong>' + title + '</strong><br />' + desc;
+		},
+		maxWidth: colorbox_max_width,
+		innerHeight: function() {
+			const h = $(this).parents(".document").attr("data-doc-info-height");
+			console.log(h);
+			if(h){
+				return ""+h+"px";
+			}
+
+			return '100%';
+		}
+	});
+
+	$(document).on("click", ".animationToggle", function(e) {
+		e.preventDefault();
+		$("#animationFrameContainer .modal-loading-indicator").css({
+			display: "block",
+			opacity: 1
+		});
+		$("#animationModalLabel").text($(this).data("title"));
+		$("#animationFrameContainer").append(
+			$("<iframe id='animationFrame' src='' frameborder='0' allow='autoplay'></iframe>")
+		);
+		$("#animationFrame").on("load", function() {
+			console.log("APP::iframe loaded. Hiding load curtain...");
+			$("#animationFrameContainer .modal-loading-indicator").animate({
+				opacity: 0
+			}, 250, function() {
+				console.log("APP::load curtain hidden");
+				$(this).css("display", "none");
+				$("#animationFrame")[0].contentWindow.postMessage("modalShown", "*");
+			});
+		});
+		$("#animationFrame").attr("src", $("a", this).attr("href"));
+		console.log("APP::attached src to iframe");
+		console.log("APP::showing modal...waiting for iframe to load");
+		$("#animationModal").modal("show");
+	});
+
+	$(document).ready(function() {
+
+		$("#animationModal").on("show.bs.modal", function(e) {
+			console.log("APP::modal on show");
+		});
+
+		$("#animationModal").on("shown.bs.modal", function(e) {
+			console.log("APP::modal shown");
+			// var frm = document.getElementById("animationFrame");
+			// frm.contentWindow.postMessage("modalShown", "*");
+		});
+
+		$("#animationModal").on("hidden.bs.modal", function(e) {
+			console.log("APP::modal hidden");
+			$("#animationFrame").remove();
+			// var $frm = $('iframe', this);
+			// $frm[0].style.height = $frm[0].contentWindow.document.body.scrollHeight + 10 + 'px';
+		});
+	});
+
+	$("body.not-mobile .trial a.pres-link,.material a.trial-link, a.trial-link.pres-link-no-trial,body.not-mobile .presentation a.pres-link").not(".reading-pane").colorbox({ onComplete: function() { colorBoxSetup() }, maxWidth: colorbox_max_width, iframe: true, scrolling: false, width: 698, height: 700 });
+
+	$("body.mobile .presentation a.pres-link").on("click", function(e) {
+		e.preventDefault();
+		var newWin = window.open($(this).attr('href'));
+		return false;
+	});
+
+	//Login
+	$(".field-username").keyup(function(event) {
+		if (event.which == 13 || event.which == 9) { //Tab or Enter
+
+		}
+	});
+
+	$(".field-password").keyup(function(event) {
+		if (event.which == 13) { //Enter
+			login();
+		}
+	});
+
+	$("#login-form #email,#login-form #password").placeholder();
+
+	//Design
+	$("#sidebar li:last-child").addClass("last");
+	$("#sidebar li:first-child").addClass("first");
+
+	//Mark elements of the sidebar that are one line of text
+	$("#sidebar.level1-descriptions li a.title .caption,#home-page.default .level1-descriptions li a.title .caption").each(function() {
+		if ($(this).height() < 20) {
+			$(this).addClass("single-line");
+		}
+	});
+	$("#level1-descriptions li").click(function(e) {
+		document.location = $(this).find("a.title").attr("href");
+		e.stopPropagation();
+	});
+
+	$("#content .ref a.link,#content .bibliography a.link").click(function(e) {
+		e.preventDefault();
+		openRef($(this).attr('href'));
+		return false;
+	});
+
+	$(".sponsor-logos a,a.ias-usa-logo").click(function(e) {
+		e.preventDefault();
+		var newWin = window.open($(this).attr('href'), 'window', 'status=1,toolbar=1,scrollbars=1,resizable=1');
+		return false;
+	});
+
+	//Bibliography References
+	$(".bibliography .ref-group").click(function() {
+		$(this).find("a.link").click();
+	});
+	$(".bibliography .ref-group ul a").click(function(e) {
+		e.stopPropagation();
+	});
+	if ($(".alphabet").length) {
+		alphabet_offset = $(".alphabet").offset().top;
+		$(window).scroll(function() {
+			if ($(window).scrollTop() > alphabet_offset) {
+				$(".alphabet").addClass("fixed");
+			} else {
+				$(".alphabet").removeClass("fixed");
+			}
+		}).scroll();
+	}
+	$(".alphabet a").tooltip({ html: true });
+
+
+	//Reading Pane
+	$('<div id="reading-pane-overlay" onclick="readingPane()"></div><div id="reading-pane"><a class="close" onclick="readingPane()"></a></div>').hide().appendTo("body");
+
+	//Table sorter for material browsing
+	$("#page-content.custom table").tablesorter({ textExtraction: myTextExtraction, debug: false, sortList: [[0, 0]] });
+	$("#page-content.custom table tbody tr").hide(0).addClass("module-hidden");
+
+	//Setup the Customization controls to auto dim themselves
+	$("#sidebar #customize-controls").mouseover(function(e) {
+		e.stopPropagation();
+		$("#sidebar #customize-controls li").stop(true, true).fadeTo(1000, 1.0);
+	});
+	$("#sidebar #customize-controls li.filter.active-trail").fadeTo(750, 0.65);
+	$("body").mouseover(function(e) {
+		e.stopPropagation();
+		$("#sidebar #customize-controls li").not(".filter.active-trail").stop(true, true).fadeTo(500, 0.35);
+		$("#sidebar #customize-controls li.filter.active-trail").stop(true, true).fadeTo(750, 0.65);
+
+	});
+
+	//Setup the alternat homepage to hide the lessons
+	$(".alternate .objective .extra").slideUp(0);
+
+	/* 
+		Browse custom curriculum sidebar customization
+	*/
+	//If there isn't a default module selected, select first one
+	if ($("#page #sidebar.level1-descriptions a.title.active-initial").length == 0) {
+		$("#page #sidebar.level1-descriptions a.title:eq(0)").addClass("active-initial");
+	}
+	$("#page #sidebar.level1-descriptions a.title").click(function(e) {
+		e.preventDefault();
+		module = $(this).attr('id');
+
+		//All others
+		if (e.shiftKey || $(this).hasClass("active-initial")) {
+			//Shift functionality
+			$("#sidebar ." + module + ",#sidebar ." + module + " a.title").toggleClass("active-trail");
+
+			//Customize
+			$("#page-content.custom table tbody tr." + module).toggleClass("module-hidden");
+
+			//Bibliography
+			$("#page-content .level1." + module).toggleClass("module-hidden");
+			$("#toc .level4." + module).toggleClass("module-hidden");
+
+			//Remove active initial
+			$(this).removeClass("active-initial");
+		} else {
+			//Default functionality is to disable other modules
+			$("#sidebar .level1,#sidebar .level1 a.title").removeClass("active-trail");
+			$("#sidebar ." + module + ",#sidebar ." + module + " a.title").addClass("active-trail");
+
+			//Customize
+			$("#page-content.custom table tbody tr").addClass("module-hidden");
+			$("#page-content.custom table tbody tr." + module).removeClass("module-hidden");
+
+			//Bibliography
+			$("#page-content .level1").addClass("module-hidden");
+			$("#page-content .level1." + module).removeClass("module-hidden");
+			$("#toc .level4").addClass("module-hidden");
+			$("#toc .level4." + module).removeClass("module-hidden");
+		}
+
+		return customizeFilter("");
+	});
+	//Active indicator clicks in sidebar customization triggers custom handling
+	$("#page #sidebar.level1-descriptions a.title .indicator").click(function(e) {
+
+		e.preventDefault();
+		module = $(this).parent().attr('id');
+
+		$("#sidebar ." + module + ",#sidebar ." + module + " a.title").toggleClass("active-trail");
+
+		//Customize
+		$("#page-content.custom table tbody tr." + module).toggleClass("module-hidden");
+
+		//Bibliography
+		$("#page-content .level1." + module).toggleClass("module-hidden");
+		$("#toc .level4." + module).toggleClass("module-hidden");
+
+		//Remove active initial
+		$(this).removeClass("active-initial");
+		return customizeFilter("");
+	});
+
+	$("#page #sidebar.level1-descriptions a.title.active-initial").click();
+	//Click the default filters in customization
+	$("#customize-controls a.active-initial").each(function() {
+		$(this).click();
+		$(this).removeClass("active-initial");
+	});
+
+	/*
+		Make the items in the customize list results open the pages through
+			ajax
+	*/
+	$("#page-content.custom table .title a,#page-content.page-bibliography .trail a").click(function(e) {
+		e.preventDefault();
+		var url = $(this).attr("href");
+		if (url.indexOf("/go/") != -1) {
+			url = url.replace(base_url + "go", base_url + "ajax");
+		} else {
+			url = url.replace(base_url + "page", base_url + "ajax/page");
+		}
+		readingPane(url);
+		return false;
+	});
+
+	/*
+			Customized homepage sections take you to appropriate locations on click
+	 */
+	$("#customize-home").click(function() {
+		document.location = base_url + 'browse';
+	});
+
+	/*
+		Browse custom section URL parsing to automatically open links
+	*/
+	var url = document.URL;
+	var parts = url.split("#");
+
+	//Redirect for old URL
+	if (parts[1] == "page/featured/lectures/state-art-therapy") {
+		parts[1] = "go/special-topics/state-art-therapy/presentation";
+	}
+
+	if ($("#page-content.custom").length && $("#page-content.custom a[href$='" + parts[1] + "']").length) {
+		$("#page-content.custom a[href$='" + parts[1] + "']")[0].click();
+	}
+
+	setupShare();
+
+	/*
+			Question List
+	 */
+	$(".question_list a").tooltip({ html: true });
+
+	$("#page .question_list").each(function() {
+		var len = $(this).find("a").length;
+		if (len > 27) {
+			len = 27;
+		}
+		var width = len * 25 + 1;
+		$(this).find(".inner").width(width + "px");
+	});
+
+	//Select user on progress for quizzes and scores
+	$("#progress tr.quiz").mouseover(function() {
+		$("#progress tr .user-bubble").removeClass("active-trail");
+		$(this).prev().find(".user-bubble").addClass("active-trail");
+	}).mouseout(function() {
+		$("#progress tr .user-bubble").removeClass("active-trail");
+	});
+
+	//On the homepage, the Getting Started button will trigger the opening of a inline window
+	$("a.button-getting-started,a.button-contributors,a.target-lightbox,.regimens .regimen-rating a,a.reading-pane").click(function(e) {
+		e.preventDefault();
+		console.log("reading pane button");
+		var url = $(this).attr("href");
+		url = url.replace("/page/", "/ajax/page/");
+		readingPane(url);
+		return false;
+	});
+
+	if (ie8_compatibility_mode) {
+		readingPane(base_url + "ajax/page/help/ie8-compatibility");
+	}
+
+	if ($(".sponsor-authors").length > 0) {
+		$(".sponsor-authors .author").fadeTo(0, 0);
+		$(".sponsor-authors .author:eq(0)").fadeTo(500, 1.0);
+		setInterval("rotateAuthors()", 3000);
+	}
+
+	//Activity Video
+	if ($(".level3-video,.level3-question").length > 0) {
+		level4ActivityQuiz(true);
+	}
+
+	$(".menu-toggle").click(function() {
+		$("#page").toggleClass("menu-closed");
+		var state = 0;
+		if ($("#page").hasClass("menu-closed")) {
+			state = 1;
+			//Menu is closed and we are in the reading state
+
+			if (!$("body").hasClass("mobile")) {
+				//Desktop/Tablet
+
+				if ($("#page.page-drugs").length) {
+					$(".page-toc").affix({
+						offset: {
+							top: 90,
+						}
+					});
+				} else {
+					$(".page-toc").affix({
+						offset: {
+							top: 150,
+						}
+					});
+				}
+				$("#sidebar .title-extra").tooltip({ trigger: 'hover', placement: 'right', container: "body", html: true, title: function() { return $(this).attr("title-extra") } });
+				$(".menu-toggle").tooltip('destroy');
+			}
+		} else {
+			state = 0;
+			//Menu is open and not in the reading state
+			if (!$("body").hasClass("mobile")) {
+
+				//$(".page-toc").unwrap(".wrapper-sticky");
+				$("#sidebar .title-extra").tooltip("destroy");
+			}
+		}
+		var request = $.ajax({
+			url: base_url + "json.php",
+			method: "GET",
+			data: { action: "setOverviewMenuState", "to": state },
+			dataType: "json"
+		});
+
+		request.done(function(msg) {
+			console.log(msg);
+		});
+
+		$("#page").hide().show();
+	});
+	//
+
+	if ($("#page").hasClass("menu-closed")) {
+		//Menu is closed and we are in the reading state
+		swapImagesToHQ(1);
+		if (!$("body").hasClass("mobile")) {
+			$("#sidebar .title-extra").tooltip({ trigger: 'hover', placement: 'right', container: "body", html: true, title: function() { return $(this).attr("title-extra") } });
+			if ($("#page.page-drugs").length) {
+				$(".page-toc").affix({
+					offset: {
+						top: 90,
+					}
+				});
+			} else {
+				$(".page-toc").affix({
+					offset: {
+						top: 150,
+					}
+				});
+			}
+		}
+	} else {
+		//Menu is open and not in the reading state
+		//swapImagesToHQ(0);
+		if (!$("body").hasClass("mobile")) {
+
+		}
+	}
+
+	//Home page features
+	if ($("#home-features").length) {
+
+		if ($("#home-landing-about").length) {
+
+			/*
+				Rotating Homepage Features with the About content
+			 */
+
+			var slideTimer = setInterval(handleFeatureContentChange, 6000);
+
+			$("#home-features .feature-content-0").addClass("active");
+			$("#home-features ul.nav").attr("data-current", 0);
+			$("#home-features ul.nav .nav-0").addClass("active");
+
+			$("#home-features ul.nav").mouseenter(function() {
+				clearInterval(slideTimer);
+			});
+			$("#home-features ul.nav").mouseleave(function() {
+				slideTimer = setInterval(handleFeatureContentChange, 6000);
+			});
+			$("#home-features .content").click(function() {
+				document.location = $(this).find(".feature-content.active a.link").attr("href");
+			});
+
+			$("#home-features ul.nav .nav").on("click", function() {
+				changeFeatureContent($(this).attr("data-id"));
+			});
+		} else {
+
+			home_features_interval = setInterval("homeFeaturesNext()", 6000);
+			home_features_slides_interval = setInterval("homeFeaturesSlide()", 6000 / $("#home-features .feature:eq(0) .slide").length);
+
+
+			$("#home-features ul.nav").mouseenter(function() {
+				//clearInterval(home_features_slides_interval);
+				clearInterval(home_features_interval);
+			});
+			$("#home-features ul.nav").mouseleave(function() {
+				clearInterval(home_features_interval);
+				home_features_interval = setInterval("homeFeaturesNext()", 6000);
+				//home_features_slides_interval = setInterval("homeFeaturesSlide()",3000);
+			});
+			$("#home-features").click(function() {
+				document.location = $(this).find(".feature-content.active a.link").attr("href");
+			});
+
+			var home_features_width = $("#home-features .feature").length * $("#content").width();
+			$("#home-features .slider .inner").css("width", home_features_width + "px");
+			$("#home-features .feature:eq(0) .slide:eq(0)").addClass("active");
+			$("#home-features .slider").scroll(function(e) {
+
+				var pos = $(this).scrollLeft();
+				var i_raw = Math.round(pos / $("#content").width() * 100);
+				var i = Math.round(i_raw / 100);
+
+				//0-959
+				//960-1919
+
+				$("#home-features .feature,#home-features .feature-content,#home-features .nav").removeClass("active");
+				$("#home-features .feature-" + i + "").addClass("active");
+				$("#home-features .feature-content-" + i + "").addClass("active");
+				$("#home-features .nav-" + i + "").addClass("active");
+
+				clearTimeout(home_features_timeout);
+
+				var section = $("#home-features .feature-content.active").attr("featured-section");
+				if (section != "") {
+					$(".level1-navigation .section").removeClass("highlight");
+					$(".level1-navigation .section." + section).addClass("highlight");
+				}
+
+				if (i * $("#content").width() == pos) {
+					return; //already there
+				}
+
+				clearInterval(home_features_slides_interval);
+				home_features_slides_interval = setInterval("homeFeaturesSlide()", 6000 / $("#home-features .feature.active .slide").length);
+				$("#home-features .feature.active .slide:eq(0)").addClass("active");
+
+				home_features_timeout = setTimeout("$('#home-features .slider').animate({scrollLeft: '" + (i * $("#content").width()) + "px'},450,function(){clearTimeout(home_features_timeout);});", 500);
+			}).scroll();
+			$("#home-features li.nav a").click(function(e) {
+				e.stopPropagation();
+				i = $(this).parent().index();
+				$('#home-features .slider').animate({ scrollLeft: i * $("#content").width() + 'px' }, 450, function() {
+					clearTimeout(home_features_timeout);
+				});
+			});
+
+		}
+	}
+
+	function handleFeatureContentChange() {
+		$("#home-features .nav").attr("data-current");
+		var next = (parseInt($("#home-features ul.nav").attr("data-current")) + 1) % $("#home-features .content .feature-content").length;
+
+		changeFeatureContent(next);
+	}
+
+	function changeFeatureContent(index) {
+		$("#home-features .content .feature-content.active").removeClass("active");
+		$("#home-features ul.nav .nav").removeClass("active");
+		$("#home-features .content .feature-content-" + index).addClass("active");
+		$("#home-features ul.nav .nav-" + index).addClass("active");
+
+		$("#home-features ul.nav").attr("data-current", index)
+	}
+
+	window.onhashchange = hashChangeAdjust;
+	setTimeout("hashChangeAdjust();", 1);
+
+	//Check On Learning Questions
+	$(".question.question-check-on-learning.style-read").each(function() {
+		$(this).find(".question-data").slideUp(0);
+		$(this).find(".close").fadeTo(0, 0);
+	});
+
+	$(".core-concept-subsection").not(".section-col-questions").find(".question.question-check-on-learning.style-learn").each(function() {
+		$(this).next(".question-placeholder").addClass("active").css("height", ($(this).height() + 30) + "px");
+	});
+
+	//Remove stacked inline-treatments
+	$(".inline-treatments .inline-treatments").contents().unwrap();
+
+	//Disable hover and add touch for non mobile interface
+	if ($("body").hasClass("not-mobile") && $("body").hasClass("touch")) {
+		$(".level1-navigation li.has-submenu > a,.level1-navigation li.has-subsubmenu > a").click(function(e) {
+			$(this).parent().mouseover();
+			e.preventDefault();
+			e.stopPropagation();
+		});
+		$("body").click(function(e) {
+			$(".level1-navigation li.has-submenu > a").mouseout();
+		});
+		$(".page-toc").click(function() {
+			$(this).toggleClass("hovered");
+		});
+	} else {
+		$(".page-toc").mouseover(function() {
+			$(this).addClass("hovered");
+		}).mouseout(function(e) {
+			$(this).removeClass("hovered");
+		});
+	}
+
+
+	//Setup progress tracker - primarily question bank
+	$("#progress-tracker .toggle a").click(function() {
+		toggleProgressTracker();
+	});
+	setupProgressTracker();
+
+	/* 
+	Fix for bootstrap popover bug that requires double click 
+	https://stackoverflow.com/a/34320956
+	*/
+	$('body').on('hidden.bs.popover', function(e) {
+		$(e.target).data("bs.popover").inState = { click: false, hover: false, focus: false };
+	});
+
+	/*
+ 	* Allow prefill of values in tools
+ 	* - this could be in a defer as well
+ 	*/
+	const tool_page = document.querySelector("div#page #tool_apri, div#page #tool_bmi, div#page #tool_crcl, div#page #tool_fib4, div#page #tool_meld, div#page #tool_saag");
+	if(tool_page !== null){
+		addEventListener("hashchange", detectHashChangeOnToolPage);
+		function detectHashChangeOnToolPage(){
+			const params = new URLSearchParams(window.location.hash.split('#')[1]);
+			const fields = tool_page.querySelectorAll("input.tool-input");
+			let available_fields = '';
+			fields.forEach((element, key) => {
+				let consider_param = null;
+				if(params.has(element.id)){
+					consider_param = element.id;
+				}
+				const aka_attribute = "data-aka";
+				let aka_value = "";
+				if(element.hasAttribute(aka_attribute)){
+					if(params.has(element.getAttribute(aka_attribute))){
+						consider_param = element.getAttribute(aka_attribute);
+					}
+					aka_value = " ("+element.getAttribute(aka_attribute)+")";
+				}
+				if(consider_param !== null){
+					element.value = params.get(consider_param);
+				}
+
+				available_fields = available_fields + "<code>"+element.id+aka_value+"</code>, ";
+
+				element.dispatchEvent(new KeyboardEvent('keyup', {'key': 'enter'}));
+			});
+			if(available_fields!=="" && document.querySelector(".calculators-note p.tool-values-from-hash")===null){
+				const explanation = document.createElement("p");
+				explanation.className = "tool-values-from-hash";
+				explanation.innerHTML = "The following values can be set in this form: "+available_fields.substring(0,available_fields.length-2)+". Set them using the # (hash) at the end of the URL.";
+				document.querySelector(".calculators-note").appendChild(explanation);
+			}
+		}
+		console.log("configured to process tool values from hash");
+		detectHashChangeOnToolPage();
+	}
+});
+
+function setupTreatmentPage() {
+
+	$("#page-content").on("click", ".trial .field-trial-link", function() {
+		$(this).parents(".trial").toggleClass("open");
+	});
+
+	setupReferenceCategories();
+	setupTrialCategories();
+	setTimeout("hashChangeAdjust();", 500);
+	if(typeof(bootstrap)!="undefined") {
+		scrollSpy = new bootstrap.ScrollSpy(document.body, {
+			target: '#page-toc',
+			rootMargin: "0 0 -25%",
+			threshold:[.1]
+		});
+
+		document.body.addEventListener("activate.bs.scrollspy", (ev) => {
+			console.log("scrollspy target", ev.target);
+			console.log("scrollspy currenttarget", ev.currentTarget);
+		});
+	}else{
+		$('body').scrollspy({ target: '.page-toc', offset: 100 });
+	}
+	$(".page-toc .header").click(function() {
+		$(this).parents(".page-toc").toggleClass("locked");
+	});
+	$("#prescribing-information table").stickyTableHeaders({ fixedOffset: 37 });
+}
+
+function setupDrugPopover(selectors) {
+	$(selectors).popover({ trigger: 'hover', placement: 'top', container: "body", html: true, content: function() { return $(this).next(".data-content").html() } });
+}
+
+function setupMaxlength(fieldID) {
+	$(fieldID).keyup(function() {
+		var len = $(this).val().length;
+
+		var max = $(this).attr("maxlength");
+		if (len >= max) {
+			$(fieldID + "-char-count").addClass("maxed");
+		} else {
+			$(fieldID + "-char-count").removeClass("maxed");
+		}
+		$(fieldID + "-char-count").html(len + "/" + max + " characters");
+
+	}).keyup();
+}
+
+function checkMobileMenuHeight() {
+	if ($("body").hasClass("menu-open")) {
+		$(".level1-navigation").css("height", $(window).height());
+	} else {
+		$(".level1-navigation").css("height", "");
+	}
+}
+
+function hashChangeAdjust() {
+	if ($("body").hasClass("not-mobile") && $("body").hasClass("touch")) {
+		return;
+	}
+	var hash = window.location.hash;
+	hash = hash.replace("#", "");
+	//Modules hash tag adjustment
+	if ($("body.action-go #page.levels,body.action-custom #page.levels").length) {
+		$("h2.section-title").removeClass("highlighted");
+		if ($('[id="' + hash + '"]').length) {
+			// window.scrollBy(0, -60);     // execute it straight away
+			$('[id="' + hash + '"]').addClass("highlighted");
+
+			if ($("body").hasClass("mobile")) {
+				if ($(".core-concept-subsection .section-title.highlighted").length) {
+					$(".major-section-core-concepts .core-concept-subsection").removeClass("open");
+					$(".major-section-core-concepts .core-concept-subsection .section-title.highlighted").parent().toggleClass("open");
+					$("body").scrollTop($(".major-section-core-concepts .core-concept-subsection .section-title.highlighted").offset().top - 60);
+				}
+			}
+		}
+	} else if ($("body.action-page #page.section-interviews").length) {
+		$("h2.section-title").removeClass("highlighted");
+		if ($('[id="' + hash + '"]').length) {
+			window.scrollBy(0, -100);     // execute it straight away
+			$('[id="' + hash + '"]').addClass("highlighted");
+		}
+	} else if ($("body.action-page #page.page-drugs").length) {
+		var drug_adjust = -60;
+		$("h2.section-title").removeClass("highlighted");
+		if ($('[id="' + hash + '"]').length) {
+			window.scrollBy(0, drug_adjust);     // execute it straight away
+			$('[id="' + hash + '"]').addClass("highlighted");
+
+			//Check if ID is visible
+			//console.log($(window).scrollTop());
+			//console.log($('[id="'+hash+'"]').offset().top);
+			var h = $(window).height();
+			//console.log(h);			//console.log(($('[id="'+hash+'"]').offset().top-(h/2))+"<"+$(window).scrollTop()+" && "+($('[id="'+hash+'"]').offset().top+(h/2))+">"+$(window).scrollTop());
+			if (($('[id="' + hash + '"]').offset().top - (h / 2)) < $(window).scrollTop() && ($('[id="' + hash + '"]').offset().top + (h / 2)) > $(window).scrollTop()) {
+				//Visible
+				//console.log("visible");
+			} else {
+				$(window).scrollTop($('[id="' + hash + '"]').offset().top + drug_adjust);
+				//console.log("scrolling to "+($('[id="'+hash+'"]').offset().top+drug_adjust));
+			}
+		}
+
+		//console.log("hash changed to "+hash);
+	}
+}
+
+function homeFeaturesSlide() {
+	var $next = $('#home-features .feature.active .slide.active').removeClass('active').next('.slide');
+	$('#home-features .feature.active .slide').removeClass("active");
+	if ($next.length) {
+		$next.addClass('active');
+	} else {
+		$("#home-features .feature.active .slide:first").addClass('active');
+	}
+}
+
+function homeFeaturesNext() {
+	var $next = $('#home-features ul.nav li.active').next('li');
+	if ($next.length) {
+		$next.find("a").click();
+	} else {
+		$("#home-features ul.nav li:first a").click();
+	}
+	$('#home-features .feature .slide').removeClass("active");
+	$("#home-features .feature .slide:first").addClass('active');
+}
+
+var myTextExtraction = function(node) {
+	// extract data from markup and return it
+	if (node.childNodes[0]) {
+		return node.childNodes[0].innerHTML;
+	} else {
+		return node.innerHTML;
+	}
+}
+
+var pn_timeout;
+var pn_height = 0;
+var questionAnswered = 0;
+var shuffle = 0;
+var level4s_tab = -1;
+var nextTriangle = '<span class="ui-icon ui-icon-circle-triangle-e"></span>';
+var nextCheck = '<span class="ui-icon ui-icon-circle-check"></span>';
+var current_q = 0;
+var visible = new Array();
+var CME = 0;
+var CNE = 0;
+var sponsor_current = 0;
+var home_features_timeout;
+var home_features_slides_interval;
+var home_features_interval;
+var shareDialog;
+
+function swapImagesToHQ(HQ) {
+	if (HQ) {
+		$(".core-concepts-text .document.doc-inline img,.treatment .treatment-tabs .document.doc-inline img,#assessment .document.doc-inline img,.questions .fieldset .document.doc-inline img").each(function() {
+			var url = $(this).attr("src");
+			$(this).attr("src", url.replace("/thumb", "")).addClass("loading");
+			$(this).on("load", function() {
+				$(this).removeClass("loading");
+			});
+		});
+		console.log("Swapping images to HQ");
+	} else {
+		$(".core-concepts-text .document.doc-inline img,.treatment .treatment-tabs .document.doc-inline img,#assessment .document.doc-inline img,.questions .fieldset .document.doc-inline img").each(function() {
+			var url = $(this).attr("src");
+			var index = url.lastIndexOf("/");
+			var begin = url.substring(0, index);
+			var end = url.substring(index);
+			$(this).attr("src", "" + begin + "/thumb" + end);
+		});
+	}
+}
+
+function rotateAuthors() {
+	console.log("rotating");
+	//Sponsor Items
+	$(".sponsor-authors .author").fadeTo(500, 0);
+
+	var nxt = $(".sponsor-authors .author:eq(" + sponsor_current + ")");
+	nxt.stop(true, false).fadeTo(500, 1.0);
+
+	$(".sponsor-authors h3").fadeTo(500, 0);
+	nxt.prevAll("h3").eq(0).stop(true, false).fadeTo(500, 1.0);
+
+	sponsor_current = (sponsor_current + 1) % $(".sponsor-authors .author").length;
+}
+
+/*
+	Sharing of core concepts
+ */
+function setupShare() {
+
+	if (!$("#page").hasClass("page-expert-opinions")) {
+		shareDialog = bootbox.dialog({
+			title: 'Share this page',
+			message: '<div id="share-form" style="display: block;">' + $("#share-form").html() + '</div>',
+			buttons: {
+				cancel: {
+					label: "Cancel",
+					className: 'btn-default',
+					callback: function() {
+						$("#share-form form #fromemail,#share-form form #toemail,#share-form form #message").val("");
+						$("#share-form .g-recaptcha").html("");
+						$("#share-form form").off("submit");
+						setupShare();
+						return true;
+					}
+				},
+				share: {
+					label: "Share",
+					className: 'btn-primary',
+					callback: function() {
+						sharePageExec();
+						return false;
+					}
+				}
+			},
+			show: false,
+			onEscape: function() {
+				$("#share-form form #fromemail,#share-form form #toemail,#share-form form #message").val("");
+				$("#share-form .g-recaptcha").html("");
+				$("#share-form form").off("submit");
+				setupShare();
+				console.log("clearing dialog");
+			}
+		});
+		$("#share-form").remove();
+	} else {
+		if ($("#share-form form fieldset button.submit").length == 0) {
+			$("#share-form form fieldset").append('<button class="submit pull-right btn btn-primary"><span class="glyphicon glyphicon-send"></span> Send E-Mail</button>');
+		}
+	}
+
+	$("#share-form form").submit(function(e) {
+		e.preventDefault();
+		sharePageExec();
+	});
+}
+
+//The selector is the span that contains the link to the table
+function tablesFullScreen(selector) {
+	console.log("moving tables inline for " + selector);
+
+	$(selector).each(function() {
+		if ($(this).hasClass("style-link-only")) {
+			return true;
+		}
+
+		var weight = $(this).find("a").attr("data-table");
+		var table_ID = $(this).find("a").attr("data-table-id");
+		var layout = $(this).find("a").attr("data-table-layout");
+
+		var doc = $(".section-tables div.inline-table.inline-table-" + weight + "").clone().addClass("inline-table-copy");
+
+		//Check if there is an option set to either close or open
+		if($(this).hasClass("has-options")){
+			doc.removeClass("closed").removeClass("open");
+			if($(this).hasClass("options-closed")){
+				doc.addClass("closed");
+			}else if($(this).hasClass("options-open")){
+				doc.addClass("open");
+			}
+		}
+
+		//Html tables can be inserted at bottom of section/summary
+		if (doc.hasClass("html-table") && layout === "inline-bottom") {
+			doc.removeClass("inline-table-copy").addClass("full-table").removeClass("inline-table");
+			doc.appendTo($(this).closest("div"));
+
+		} else {
+			var caption = '<span class="weight">Table ' + weight + '</span>. ' + doc.find("caption h4").html();
+			if (doc.find("caption h4").length == 0) {
+				caption = '<span class="weight">Table ' + weight + '</span>. ' + doc.find("caption").html();
+			}
+
+			//Table # and name only applicable to html tables for now
+			if (doc.hasClass("html-table") && layout !== "inline-with-table") {
+				doc.append('<div class="field field-name">' + caption + '</div>');
+			}
+			doc.attr('data-table', weight);
+			doc.attr('data-table-id', table_ID);
+			if (layout !== undefined) {
+				doc.addClass("layout-" + layout);
+				doc.removeClass("layout-full");
+			}
+
+			//Regimen table opens itself
+			if ($("body").hasClass("not-mobile") && doc.hasClass("html-table")) {
+				doc.click(function() {
+					openHTMLTable($(this).attr("data-table-id"));
+				});
+			}
+
+			if(layout === "inline-with-table") {
+				//Inline with table will put table directly below closest element
+				doc.appendTo($(this).closest("p,div,li"));
+			}else{
+				//Regimens tables are floated right, inserted before
+				if ($(this).closest("p,div,li").children("div.item-context-float").length > 0 && $(this).hasClass("has-link-relation")===false) {
+					doc.insertAfter($(this).closest("p,div,li").children("div.item-context-float").last());
+				} else {
+					if($(this).hasClass("link-relation-below")) {
+						if($(this).parents("h2,h3,h4").length>0){
+							//this is inside a heading, insert right after
+							doc.addClass("link-in-heading");
+							doc.insertAfter($(this).parents("h2,h3,h4"));
+						}else{
+							doc.appendTo($(this).closest("p,div,li"));
+						}
+					}else if($(this).hasClass("link-relation-bottom")){
+						let next_title = $(this).parent("p,ul,ol,h3,h4").nextAll("h3,h4");
+						if(next_title.length>0){
+							doc.insertBefore(next_title.first());
+						}else{
+							//There is no more titles in this section. append to core concept
+							doc.appendTo($(this).closest("div.section-content"));
+						}
+					}else if($(this).hasClass("link-relation-top")){
+						//If this is not the first item that we put at the top, then we need to add it after the previous
+						doc.addClass("link-relation-top");
+						const section = $(this).closest("div.section-content");
+						if(section.find("div.document.link-relation-top.doc-inline").length){
+							doc.insertAfter(section.find("div.document.link-relation-top.doc-inline").last());
+						}else{
+							doc.prependTo(section);
+						}
+					}else{
+						if($(this).parents("h2,h3,h4").length>0){
+							//this is inside a heading, insert right after
+							doc.addClass("link-in-heading");
+							doc.insertBefore($(this).parents("h2,h3,h4"));
+						}else{
+							doc.prependTo($(this).closest("p,div,li"));
+						}
+					}
+				}
+
+				var factor = 0.3;
+				if (layout == "inline-thumb") {
+					factor = 0.225;
+				} else if (layout == "inline-thumb-tiny") {
+					factor = 0.125;
+				}
+
+				if ($("body").hasClass("not-mobile")) {
+					var h = doc.find("table").height() * factor;
+					if (h < 200) {
+						doc.children(".inner").height(Math.round(h + 15));
+					}
+				}
+			}
+
+
+			doc.addClass("item-context-float");
+			$(doc).find(".section-table-ref").appendTo($(doc).find("tfoot tr:first-child td:first-child"));
+		}
+
+		$(doc).find('[data-toggle="tooltip"]').tooltip({ html: true });
+	});
+
+	drugPopoverSetup();
+}
+
+function customizeFilter(type) {
+
+	if (type != "") {
+		$("#sidebar #customize-controls li.filter-" + type + ",#sidebar #customize-controls li.filter-" + type + " a").toggleClass("active-trail");
+		if (type == "updated") {
+			$("#page-content.custom table tbody tr").not(".type-updated").toggleClass("update-hidden");
+		} else {
+			$("#page-content.custom table tbody tr.type-" + type).toggleClass("type-hidden");
+		}
+
+	}
+	$("#page-content.custom table tbody tr").not(".module-hidden,.type-hidden,.update-hidden").show(0);
+	$("#page-content.custom table tbody tr.module-hidden,#page-content.custom table tbody tr.type-hidden,#page-content.custom table tbody tr.update-hidden").hide(0);
+
+	checkHeight(100);
+	return false;
+}
+
+//Opens dialog to share page
+function sharePage() {
+	console.log("started sharing");
+
+	$("#share-form div").removeClass("incorrect").removeClass("correct");
+	$.cachedScript("https://www.google.com/recaptcha/api.js?render=explicit&onload=grecaptchaOnLoad").done(function(script, textStatus) {
+		console.log("Loading recaptcha: " + textStatus);
+	});
+	$("#shareme").html('');
+	$('#shareme').sharrre({
+		share: {
+			facebook: true,
+			linkedin: true,
+			twitter: true,
+		},
+		buttons: {
+			facebook: { layout: 'box_count' },
+			linkedin: { counter: 'top' },
+			twitter: { count: 'vertical' }
+		},
+		enableHover: false,
+		enableCounter: false,
+		enableTracking: true
+	});
+
+	if ($("#page").hasClass("page-expert-opinions")) {
+		//Use the added share button
+
+		try {
+			grecaptcha.reset()
+		}
+		catch (e) {
+			null
+		}
+	} else {
+		//Open dialog
+		shareDialog.modal('show');
+	}
+	return false;
+}
+
+function grecaptchaOnLoad() {
+	try {
+		grecaptcha.render('recaptcha', {
+			'sitekey': $("#recaptcha").attr("data-sitekey")
+		});
+	}
+	catch (e) {
+		null
+	}
+}
+
+function sharePageExec() {
+	var fields = new Array();
+	var button;
+	fields[0] = ['toemail', 'email', ''];
+	if ($("body.logged-in").length == 0) {
+		fields[1] = ['fromemail', 'email', ''];
+	}
+	if (!$("#page").hasClass("page-expert-opinions")) {
+		button = $("button:contains('Share')");
+	} else {
+		button = $("#share-form form fieldset button.submit");
+	}
+
+	if (checkFields(fields) && $("#g-recaptcha-response").val() != "") {
+		$(button).prop('disabled', 'disabled');
+		$.post(base_url + "json.php?action=email", $("#share-form form").serialize(), function(resp, textStatus, XMLHttpRequest) {
+
+			bootbox.alert("<h3>" + resp.title + "</h3>" + resp.text);
+
+			//If there is an error, reset captcha
+			if (resp.status < 0) {
+				try {
+					grecaptcha.reset()
+				}
+				catch (e) {
+					null
+				}
+			}
+
+			if (!$("#page").hasClass("page-expert-opinions")) {
+				if (resp.status == 0) {
+					shareDialog.modal('hide');
+					$("#share-form form #fromemail,#share-form form #toemail,#share-form form #message").val("");
+					$("#share-form .g-recaptcha").html("");
+					$("#share-form form").off("submit");
+					setupShare();
+					sharePage();
+				}
+			} else {
+				$("#share-form form #fromemail,#share-form form #toemail,#share-form form #message").val("");
+				$("#share-form .g-recaptcha").html("");
+				setupShare();
+				sharePage();
+			}
+			$(button).prop('disabled', '');
+		}, "json");
+	};
+}
+
+var ajax_request;
+var reading_pane_last_position = 0;
+
+function readingPane(url) {
+	//console.log(url);	
+	$("#reading-pane-overlay").removeClass("done");
+
+	//Remove any open citations and other popovers					
+	$(".reference-group").popover('hide');
+	$(".popover").remove();
+
+	if ($("#reading-pane:visible").length) {
+
+		if ($(".section-figures").hasClass("open")) {
+			toggleFigures();
+		}
+
+		//Activity quiz
+		if ($(".activity-quiz").length) {
+			$(".level3 .url,.level3 .section-instructions").show();
+		}
+
+		//On the homepage, the Getting Started button will trigger the opening of a inline window
+		$("#reading-pane #page-content .inner .level4s-full-text a.reading-pane").click(function(e) {
+			var url = $(this).attr("href");
+			url = url.replace("/page/", "/ajax/page/");
+			readingPane(url);
+			return false;
+		});
+
+		//Hide it
+		$("#reading-pane-overlay").fadeTo(250, 0).hide(0);
+		$("#reading-pane .close").hide(100);
+
+		$("#reading-pane .placeholder").remove();
+		$("#reading-pane .reading-pane-anchor").remove();
+		$("#reading-pane #page-content").insertAfter($("#sidebar"));
+
+		$("#reading-pane").hide(100);
+		//$("#page-navigation-top .reading-pane,#page-navigation-top .figures").remove();
+		$(".button-reading-pane,.page-navigation .prev,.page-navigation .next").show(100);
+
+		$("#share-form").hide();
+
+		setTimeout("checkHeight(1000);", 1000);
+		$("html,body").animate({ scrollTop: reading_pane_last_position + "px" }, 1000, "swing");
+	} else {
+		//make sure we are not stuck loading
+		if ($("#reading-pane-overlay:visible").length) {
+			//We are stuck loading
+			ajax_request.abort();
+			$("#reading-pane-overlay").fadeTo(250, 0).hide(0);
+		}
+
+		//If we are on a mobile device, open presentation instead
+		if ($(".level3-powerpoint").length && $(".mobile").length) {
+			$(".level3-powerpoint .slide_library_alt a").click();
+			return;
+		}
+
+		$("#reading-pane-overlay").show(0).fadeTo(0, 0).fadeTo(500, 0.75);
+		$("#reading-pane .close").show(100);
+
+		//Move the reading pane to the top of the window
+		reading_pane_last_position = $(window).scrollTop();
+		$("#reading-pane").css("top", reading_pane_last_position + 15 + "px");
+
+		if (url == undefined) {
+			$("#page-content").appendTo($("#reading-pane"));
+			$(".button-reading-pane,.page-navigation .prev").hide(100);
+
+			if ($("#page-content .quiz,#page-content .section-self-assessment").length == 0) {
+				$(".page-navigation .next").hide(100);
+			}
+
+			$("#reading-pane #page-content .inner .level4s-full-text a.reading-pane").unbind("click");
+
+			readingPaneExtraNavigation();
+
+			$("#reading-pane").show(100);
+			$("#reading-pane-overlay").addClass("done");
+
+		} else {
+			//Fetch content
+			$("#reading-pane").append('<div class="placeholder" />');
+			$("#reading-pane").append('<div class="reading-pane-anchor" />');
+
+			ajax_request = $.ajax({
+				type: 'GET', url: url, success: function(data) {
+
+					$("#reading-pane .reading-pane-anchor").html(data);
+
+					$(".contributor-blurb a").popover({ trigger: 'hover', placement: 'bottom', container: "body", html: true, content: function() { return $(this).next(".data-content").html() } });
+
+					documentsFullScreen("#reading-pane .level4s .document");
+					readingPaneExtraNavigation();
+					setupShare();
+					if (typeof referencesSetup == 'function') {
+						referencesSetup();
+					}
+
+					$("#reading-pane a.document,#reading-pane .document a.image,#reading-pane .term a.term-link.has-image").colorbox({
+						onComplete: function() { colorBoxSetup() }, title: function() {
+							var desc = $(this).attr('alt');
+							var title = $(this).attr('title');
+							if (title == "") {
+								title = $(this).attr('data-original-title');
+							}
+							return '<strong>' + title + '</strong><br />' + desc;
+						}, maxWidth: colorbox_max_width,
+						maxHeight: "100%"
+					});
+
+					drugPopoverSetup("#reading-pane");
+
+					$(".button-reading-pane,.page-navigation .prev,.page-navigation .next").hide(100);
+
+					$("#reading-pane .ref a.link").addClass("ref-popup").unbind("click").click(function(e) {
+						e.preventDefault();
+						openRef($(this).attr('href'));
+						return false;
+					});
+
+					$("#reading-pane #page-content .inner .level4s-full-text a").not(".document").not(".link").not(".no-popup").not(".image").not(".reading-pane").not(".term-link").click(function(e) {
+						e.preventDefault();
+						openRef($(this).attr('href'));
+						return false;
+					});
+
+					$("#reading-pane #page-content .inner .level4s-full-text a.reading-pane").unbind("click");
+
+					$("h2.section-title").first().addClass("first");
+
+					setTimeout('$("#reading-pane").show(100).css("overflow","visible");', 250);
+
+					$("#reading-pane").addClass("opened-url");
+					$("#reading-pane-overlay").addClass("done");
+				}
+			});
+			//*/
+		}
+
+		$("#share-form").show();
+
+		//Figures
+		/*if($(".section-figures div.document").length){
+			$('<span class="right figures"><a class="button button-figures left" id="figures-button" title="Figures" onclick="toggleFigures()"><span class="ui-icon ui-icon-image"></span> Figures</a></span>').appendTo("#page-navigation-top .content");
+		}*/
+
+
+
+		//toggleFigures();
+		checkHeight(250);
+	}
+}
+
+function readingPaneExtraNavigation() {
+	if ($("#reading-pane #page-content .level4s").length) {
+		//$('').appendTo(".page-navigation .content");
+	}
+}
+
+function drugPopoverSetup(prefix) {
+	if (prefix) {
+		prefix = prefix + " ";
+	} else {
+		prefix = "";
+	}
+	$(prefix + ".regimen-class a,.regimen-level a").popover({ trigger: 'hover', placement: 'top', container: "body", html: true, content: function() { return $(this).next(".data-content").html() } });
+
+	$(prefix + "div.regimen-drug,div.treatment.layout-inline").popover({ trigger: 'hover', placement: 'top', html: true, container: 'body', content: function() { return $(this).find(".data-content").html() } });
+}
+
+function contributorPopoverSetup() {
+	$(".contributor-blurb a").popover({ trigger: 'hover', placement: 'bottom', container: "body", html: true, content: function() { return $(this).next(".data-content").html() } });
+}
+
+function toggleFigures() {
+
+	if ($(".section-figures").hasClass("open")) {
+		//hide It
+		$("#page-navigation-top .figures").animate({
+			right: "-60px"
+		}, 750, "linear");
+		$("#reading-pane").animate({
+			marginLeft: "-400px"
+		}, 750, "linear");
+		$(".section-figures").animate({
+			width: 0,
+			paddingLeft: 0,
+			paddingRight: 0,
+			right: 0
+		}, 750, "linear", function() {
+			$(this).removeClass("open").removeClass("prepped").attr("style", "");
+		});
+	} else {
+		//Show it
+
+		//Check to make sure there are figures to show
+		if ($(".section-figures div.document").length) {
+
+			$(".section-figures").addClass("prepped");
+			$("#page-navigation-top .figures").animate({
+				right: "-203px"
+			}, 750, "linear");
+			$("#reading-pane").animate({
+				marginLeft: "-470px"
+			}, 750, "linear");
+			$(".section-figures").animate({
+				width: "110px",
+				paddingLeft: "20px",
+				paddingRight: "13px",
+				right: "-145px"
+			}, 750, "linear", function() {
+				$(this).addClass("open");
+			});
+
+			//$(".section-figures").css('height', ($(window).height()-100)+"px"});
+		}
+	}
+}
+
+function figuresScroll() {
+	if ($(window).scrollTop() > $(".section-figures").height()) {
+		$(".section-figures").stop(true, false);
+		$(".section-figures").animate({
+			top: ($(window).scrollTop() - 25) + "px"
+		}, 500, "linear");
+
+		$("#page-navigation-top .figures").stop(true, false);
+		$("#page-navigation-top .figures").animate({
+			top: ($(window).scrollTop() + 67 - 25) + "px"
+		}, 500, "linear");
+
+	} else {
+		$(".section-figures").attr("style", "");
+		$("#page-navigation-top .figures").css("top", "95px");
+	}
+}
+
+function displayPageNotifications() {
+	$("#notifications .message").each(function() {
+		var timeout = $(this).attr("data-timeout");
+		if (timeout == 0) {
+			timeout = false;
+		}
+		iziToast.show({
+			position: 'topCenter',
+			class: 'alert-' + $(this).attr("data-class"),
+			message: $(this).find(".msg").html(),
+			title: $(this).find(".title").html(),
+			icon: 'glyphicon glyphicon-' + $(this).attr('data-icon'),
+			timeout: timeout,
+			layout: 2,
+			maxWidth: "500px"
+		});
+		$(this).addClass("message-displayed hidden");
+	});
+}
+
+function loginShowWindow() {
+	if ($("body").hasClass("mobile")) {
+		document.location = base_url + 'alternate';
+	} else {
+		if ($("#login-window").is(":hidden")) {
+			$(".user-status .loggedout").addClass("user");
+			$("#login-window").slideDown(500);
+			$("#login-window .close").show();
+		} else {
+			$("#login-window").slideUp(500);
+			$(".user-status .loggedout").removeClass("user");
+			$("#login-window .close").show();
+		}
+	}
+}
+
+function userShowNavigation() {
+	if ($("body").hasClass("mobile")) {
+		if ($("#user-navigation:visible").length) {
+			$("body.mobile").removeClass("menu-open");
+			setTimeout("checkMobileMenuHeight();", 100);
+		} else {
+			$("body.mobile").addClass("menu-open");
+			setTimeout("checkMobileMenuHeight();", 100);
+		}
+	}
+	$("#user-navigation").slideToggle(250);
+}
+
+function level4OpenResource(item) {
+	var url = $(item).attr('href');
+	//Popup middle 455px,300px
+	var x = 100;
+	var y = 0;
+	var newWin = window.open(url, "Resource", "status=0,toolbar=0,location=0,menubar=0,height=700,width=1100,scrollbars=1,resizable=1");
+	if(newWin){
+		newWin.moveTo(x, y);
+	}
+
+	level4ActivityQuiz(0);
+}
+
+function level4ActivityQuiz(noPane) {
+
+	//This should only be shown if the activity has a quiz, and we are on the dedicated activity page
+	if ($(".level3 .activity-quiz").length) {
+		if ($("#reading-pane.opened-url:visible").length) {
+			noPane = 1;
+		}
+
+		//Hiding it
+		if ($("#reading-pane:visible").not(".opened-url").length) {
+			$(".level3 .url,.level3 .section-instructions").show();
+			//Showing It
+		} else {
+			$(".activity-quiz .pre").hide();
+			$(".activity-quiz .post").show();
+			if (!noPane && $("body.level3").length) {
+				$(".level3 .url,.level3 .section-instructions").hide();
+			}
+			// $(".page-navigation .next").show();
+			//
+			// //Show check answer
+			// $(".page-navigation .next .button").html('<span class="ui-icon ui-icon-circle-triangle-e"></span>Check Answer');
+			// $(".page-navigation .next .button").on("click", function(){
+			// 	return handleActivityQuiz();
+			// })
+		}
+		if (!noPane && $("body.level3").length) {
+			readingPane();
+		} else {
+			checkHeight();
+		}
+	}
+}
+
+function pageNavigationNext() {
+
+	pageNavigationNextButtonText(1);
+	if ($(".quiz .questions .unanswered:visible").length) {
+		//Check on learning don't stop navigation
+		if ($(".question.question-check-on-learning").length) {
+			return true;
+		}
+		//For quizes, only allow to check answer when all questions have been
+		//	answered
+		var ans = $(".quiz .questions .fieldset input:checked").length + $(".quiz .questions .fieldset textarea[value!='']").length;
+		var total = $(".quiz .questions .fieldset").length;
+		if (total <= ans) {
+			console.log("Triggered from pageNavNext()");
+			checkAnswer();
+		} else {
+			bootbox.alert({
+				title: "Please answer all questions",
+				message: "You've answered <b>" + ans + " out of " + total + "</b> questions.",
+				size: 'small'
+			});
+		}
+		return false;
+	}
+	if ($(".section-self-assessment .unanswered").length) {
+		console.log("Triggered from pageNacNext .unanswered .section-self-assess");
+		checkAnswer();
+		return false;
+	}
+	return true;
+}
+
+function handleActivityQuiz() {
+	if ($(".quiz .questions .unanswered:visible").length) {
+		//For quizes, only allow to check answer when all questions have been
+		//	answered
+		var ans = $(".quiz .questions .fieldset input:checked").length + $(".quiz .questions .fieldset textarea[value!='']").length;
+		var total = $(".quiz .questions .fieldset").length;
+		if (total <= ans) {
+			console.log("Triggered from pageNavNext()");
+			checkActivityAnswer();
+		} else {
+			bootbox.alert({
+				title: "Please answer all questions",
+				message: "You've answered <b>" + ans + " out of " + total + "</b> questions.",
+				size: 'small'
+			});
+		}
+		return false;
+	}
+}
+
+function checkActivityAnswer() {
+	console.log("Check answer triggered");
+
+	$(".nextButton").hide();
+
+	$(".button-checkAnswer").button('loading');
+	$(".page-navigation .next .button").hide();
+	var data_array = $(".questions input:checked, .questions input:hidden, .questions textarea, .questions input.text").serializeArray();
+	var data = $.param(data_array);
+
+	$.post(base_url + "json.php", data, function(resp, textStatus, XMLHttpRequest) {
+
+		console.log("Handing off to response handler");
+		handleActivityQuizResponse(resp);
+
+		setTimeout("checkHeight();", 1000);
+	}, "json");
+}
+
+function handleActivityQuizResponse(resp) {
+	if (typeof (animate_speed) === 'undefined') animate_speed = 500;
+
+	// Check to see if this quiz has already been answered
+	if ($(".quiz .unanswered").length === 0) {
+		console.log("No unanswered questions found, returning");
+		return;
+	}
+
+	$(".page-navigation .next .button").removeClass("hide").show();
+	$(".page-navigation .submit .button").hide();
+
+	var quiz = false;
+	if ($("#page-content .quiz").length) {
+		quiz = true;
+	}
+
+	var correct = 0;
+	var total = 0;
+
+	var total_q = $("#page-content .quiz .fieldset").length;
+
+	var quiz_CNE = 0;
+
+	$(resp).each(function(q, val) {
+		var answered = 0;
+		var correct_at = -1;
+		current_q = this;
+		$(".page-navigation .next .button").show();
+
+		if ($(this).attr('status') == "fail") {
+			console.log("Failed");
+			return true;
+		}
+
+
+		$("#FS_" + $(this).attr('question_ID') + " .opt input").each(function(i) {
+			//Selected correct answer: 3
+			//Correct answer, not selected: 2
+			//Selected answer, but not correct: 1
+			//Not selected, not correct: 0
+
+			switch ($(current_q).attr('options')[$(this).val()]) {
+				case 0:
+					if (quiz_CNE) {
+						$(this).parent().addClass("hidden").fadeTo(500, 0).hide(500);
+					}
+					if (quiz) {
+						//$(this).parent().addClass("hidden");
+					} else {
+						$(this).parent().addClass("hidden").fadeTo(500, 0).hide(500);
+					}
+					//console.log("Incorrect not selected");
+					break;
+				case 1:
+					$(this).parent().before('<h4 class="incorrect">You answered:</h4>');
+					$(this).parent().delay(1000).addClass("incorrect").addClass("selected");
+					//console.log("Selected");
+					answered++;
+					break;
+				case 2:
+					$(this).parent().before('<h4 class="correct">This option was correct:</h4>');
+					$(this).parent().delay(1000).addClass("partial");
+					//console.log("Correct but not selected");
+					total++;
+					break;
+				case 3:
+					if (quiz_CNE) {
+						$(this).parent().before('<h4 class="correct">You chose this option:</h4>');
+					} else {
+						$(this).parent().before('<h4 class="correct">You chose this option correctly:</h4>');
+					}
+					$(this).parent().delay(1000).addClass("correct").addClass("selected");
+					//console.log("Correct and selected");
+					answered++;
+					total++;
+					correct++;
+					break;
+			}
+
+			questionAnswered = 1;
+
+		});
+
+
+
+		//Go through options and mark question correct/incorrect
+		$(".fieldset").each(function() {
+			$(this).addClass("incorrect");
+
+			if ($(this).children(".selected.correct").length) {
+				$(this).removeClass("incorrect").addClass("correct");
+			}
+
+			$(this).find("textarea").attr('disabled', 'disabled');
+		});
+		$("#FS_" + $(this).attr('question_ID')).removeClass("unanswered").addClass("answered");
+		$("#FS_" + $(this).attr('question_ID') + " .opt input").remove();
+
+		if (answered == 0) {
+			if (quiz_CNE) {
+				$("#FS_" + $(this).attr('question_ID') + " h3").after('<h4 class="correct">You answered:</h4>');
+			} else {
+				$("#FS_" + $(this).attr('question_ID') + " h3").after('<h4 class="incorrect">You did not answer this question.</h4>');
+			}
+		}
+		var image_sum = '';
+
+
+		if ($(this).attr('image_sum_url') != "" && $(this).attr('image_sum_url') != undefined) {
+			image_sum = '<a class="image" href="' + $(this).attr('image_sum_url') + '" title="' + $(this).attr('image_sum_caption') + '" alt=""><img src="' + $(this).attr('image_sum_url').replace(".jpg", "_thumb.jpg") + '" alt="' + $(this).attr('image_sum_caption') + '" /></a>';
+		}
+
+		if ($(this).attr('summary') != "" && $(this).attr('summary') != null) {
+			$("#FS_" + $(this).attr('question_ID') + "").append('<div class="summary clearfix">' + image_sum + '<b>Summary</b><br />' + $(this).attr('summary') + '</div>');
+
+			documentsFullScreen("#FS_" + $(this).attr('question_ID') + " .summary .document");
+			tablesFullScreen("#FS_" + $(this).attr('question_ID') + " .summary .inline-table-link");
+
+			$("#FS_" + $(this).attr('question_ID') + " .summary a.document").not(".document-series").colorbox({
+				onComplete: function() { colorBoxSetup() }, title: function() {
+					var desc = $(this).attr('alt');
+					var title = $(this).attr('title');
+					if (title == "") {
+						title = $(this).attr('data-original-title');
+					}
+					return '<strong>' + title + '</strong><br />' + desc;
+				}, maxWidth: colorbox_max_width,
+				maxHeight: "100%"
+			});
+
+		}
+
+		//TODO: This should be a function
+		$("#FS_" + $(this).attr('question_ID') + " a.image").not(".document-series").colorbox({
+			onComplete: function() { colorBoxSetup() }, title: function() {
+				var desc = $(this).attr('alt');
+				var title = $(this).attr('title');
+				return '<strong>' + title + '</strong><br />' + desc;
+			}, maxWidth: colorbox_max_width,
+			maxHeight: "100%"
+		});
+
+		if ($("body").hasClass("mobile") || $("#page.menu-closed").length) {
+			swapImagesToHQ(true);
+		}
+
+		if ($("body").hasClass("mobile")) {
+			$("html,body").animate({ scrollTop: ($(".fieldset h3").offset().top - 5) + "px" }, animate_speed);
+		}
+	});
+
+	//If more than one question, set total possible to total questions
+	if (total_q > 1) {
+		total = total_q;
+	}
+
+	if (quiz && total != 0) {
+		console.log(correct + " " + total);
+		if (correct / total >= 0.8) {
+
+		} else if (quiz_CNE < 1) {
+			//Show button to retake the quiz
+			$('<a onclick="location.reload()" class="button button-retake" style="display: inline-block;">Retake Quiz<span class="ui-icon ui-icon-refresh"></span></a>').prependTo($(".page-navigation .next"));
+		}
+	}
+
+	$('.fieldset [data-toggle="tooltip"]').tooltip({ html: true });
+	$('.fieldset [data-toggle="popover"]').popover();
+
+	setTimeout("checkHeight(1);", 2500);
+}
+
+/**
+ * Handle the CustomCurriculum quiz form submission
+ * @returns {boolean}
+ */
+function handleCustomCurriculumQuizSubmitButton() {
+	return _customCurriculumCheckFormCompletion(customCurriclumPostAnswers);
+}
+
+/**
+ * Handle the CustomCurriculum quiz form submission
+ * @returns {boolean}
+ */
+function handleCustomCurriculumSurveySubmitButton() {
+	return _customCurriculumCheckFormCompletion(customCurriclumSurveyPostAnswers);
+}
+
+function _customCurriculumCheckFormCompletion(task) {
+	if ($(".quiz .questions .unanswered:visible").length) {
+		// For quizzes, only allow to check answer when all questions have been
+		// answered
+		var ans = $(".quiz .questions .fieldset input:checked").length + $(".quiz .questions .fieldset textarea[value!='']").length;
+		var total = $(".quiz .questions .fieldset").length;
+		if (total <= ans) {
+			console.log("Triggered from handleCustomCurriculumQuizSubmitButton()");
+			task();
+		} else {
+			bootbox.alert({
+				title: "Please answer all questions",
+				message: "You've answered <b>" + ans + " out of " + total + "</b> questions.",
+				size: 'small'
+			});
+		}
+		return false;
+	}
+}
+
+/**
+ * Check a CustomCurriculum quiz answers, submit via AJAX
+ */
+function customCurriclumPostAnswers() {
+	console.log("Check answer triggered");
+	// prepare the interface
+	$(".page-navigation .next .button").hide();
+	$(".page-navigation .submit .button").button("loading");
+
+	// collect the form data
+	var data_array = $(".questions input:checked, .questions input:hidden, .questions textarea, .questions input.text").serializeArray();
+	var data = $.param(data_array);
+
+	// A quiz has options regarding CE preferences. The selected option is currently the last item in the array
+	if (data_array[data_array.length - 1].value == "CME") {
+		CME = 1;
+		CNE = 0;
+	} else if (data_array[data_array.length - 1].value == "CNE") {
+		CNE = 1;
+		CME = 0;
+	} else {
+		CME = 0;
+		CNE = 0;
+	}
+
+	// submit request
+	$.post(base_url + "json.php", data, function(resp, textStatus, XMLHttpRequest) {
+		console.log("Handing off to response handler");
+
+		handleCustomCurriculumQuizResponse(resp);
+		$(".page-navigation .submit .button").hide();
+
+		setTimeout("checkHeight();", 1000);
+		$(".submit-options").hide();
+	}, "json");
+}
+
+/**
+ * Add a loading animation to a button
+ * @param $button
+ */
+function addLoadingtoButton($button) {
+	$button.prepend($("<img class='loading-gif' src='/css/images/ajax-loader.gif'>"))
+}
+
+/**
+ * Remove a loading animation from a button
+ * @param $button
+ */
+function removeLoadingFromButton($button) {
+	$(".loading-gif", $button).remove();
+}
+
+/**
+ * Check a CustomCurriculum quiz answers, submit via AJAX
+ */
+function customCurriclumSurveyPostAnswers() {
+	console.log("Survey post answer triggered");
+	// prepare the interface
+	$(".page-navigation .submit-survey").addClass("disabled");
+	$(".page-navigation .submit-survey .button").css("pointer-events", "none");
+	// addLoadingtoButton($(".page-navigation .submit-survey .button"));
+
+	// collect the form data
+	var data_array = $(".questions input:checked, .questions input:hidden, .questions textarea, .questions input.text").serializeArray();
+	var data = $.param(data_array);
+
+	// submit request
+	$.post(base_url + "json.php", data, function(resp, textStatus, XMLHttpRequest) {
+		handleCustomCurriculumSurveyResponse(resp);
+
+		setTimeout("checkHeight();", 1000);
+	}, "json");
+}
+
+/**
+ *
+ * @param array resp an array of arrays each with one object that is the result for a question
+ * @param animate_speed
+ */
+function handleCustomCurriculumQuizResponse(resp, animate_speed) {
+	if (typeof (animate_speed) === 'undefined') animate_speed = 500;
+
+	// Check to see if this quiz has already been answered
+	if ($(".quiz .unanswered").length === 0) {
+		console.log("No unanswered questions found, returning");
+		return;
+	}
+
+	// Mark the options
+	for (questionID in resp.corrections) {
+		markQuestionResponse(questionID, resp.corrections[questionID], resp.passed_ce);
+		console.log("corrected question ID:", questionID);
+	}
+
+	if (resp.has_passed) {
+		$(".page-navigation .next .button").removeClass("hide").show();
+	}
+
+	// Check for a passed quiz
+	const moc_text = resp.moc_attempted == 1 ? '+MOC' : '';
+
+	if (resp.passed) {
+		cme_status = 'earned';
+		cme_caption = '<span class="ui-icon ui-icon-circle-check"></span> CME' + moc_text + ' Earned';
+		// $(".page-navigation .button-cme").attr('display','inline-block');
+		cne_status = 'earned';
+		cne_caption = '<span class="ui-icon ui-icon-circle-check"></span> CNE Earned';
+
+		// update the quiz step
+		$('#quiz-ce-steps .ce-progress .step-quiz').addClass("complete").removeClass("step-current");
+		$('#quiz-ce-steps .ce-progress .step-quiz h3').text("Lesson Quiz");
+		$('#quiz-ce-steps .ce-progress .step-quiz h3').nextAll().remove();
+
+		if (!resp.has_completed_topics && (!resp.is_self_study || !resp.is_seeking_ce)) {
+			$('#quiz-ce-steps .ce-progress .step-topics').addClass("step-current");
+		} else {
+			if (resp.has_completed_survey) {
+				$('#quiz-ce-steps .ce-progress .step-print').addClass("step-current");
+			} else {
+				$('#quiz-ce-steps .ce-progress .step-survey').addClass("step-current");
+				var $survey_head = $('#quiz-ce-steps .ce-progress .step-survey h3');
+				$survey_head.text("Provide Feedback");
+				$survey_head.nextAll().remove();
+				$("<span>Complete the Lesson survey</span>").insertAfter($survey_head);
+
+				$('#quiz-ce-steps .ce-progress .step-survey > *').wrapAll("<a href='" + window.location.href + "/cne'></a>");
+				$('.page-navigation .next .button-next').attr("href", window.location.href + "/cne").text("Complete Lesson Survey");
+			}
+		}
+
+		const buttons = {
+			review: {
+				label: 'Review quiz answers',
+				className: 'btn-default',
+				callback: function() { }
+			}
+		}
+
+		let message = '<h2>You passed the quiz!</h2><strong>You passed the quiz with ' + resp.score + ' of ' + resp.score_max + ' correct.</strong>';
+
+		if (resp.is_survey_required && !resp.has_completed_survey) {
+			if (resp.has_passed_for_ce) {
+				message += "<p>Before you can claim CE credit and progress toward the certificate, please provide us valuable feedback by completing the Lesson Survey. To earn a certificate, you must complete a survey.</p>";
+			} else {
+				message += "<p>Before you can register progress toward the certificate, please provide us valuable feedback by completing the Lesson Survey. To earn a certificate, you must complete a survey.</p>";
+			}
+
+			buttons["survey"] = {
+				label: 'Complete the survey',
+				className: 'btn-primary',
+				callback: function() {
+					document.location = $(".page-navigation .next .button").attr("href");
+				}
+			}
+		} else {
+			if (resp.has_passed_for_ce) {
+				message += "<p>You have earned CE! Click the Claim CE button to view your credit certificate.</p>";
+
+				buttons["survey"] = {
+					label: 'Claim CE',
+					className: 'btn-primary',
+					callback: function() {
+						if (resp.ce_attempted.cme) {
+							claimCME();
+						} else {
+							claimCNE();
+						}
+					}
+				}
+			}
+		}
+
+		bootbox.dialog({
+			title: 'Congratulations!',
+			message,
+			size: 'medium',
+			onEscape: true,
+			backdrop: true,
+			buttons,
+		})
+	} else {
+		cme_status = 'attempted';
+		cme_caption = 'CME' + moc_text + ' Attempted';
+		cne_status = 'attempted';
+		cne_caption = 'CNE Attempted';
+
+		var cert_score_msg = resp.passing_score == 80 ? "<li>To earn any certificate, a score of 80% or higher is required</li>" : "<li>To earn CE, a score of 80% or higher is required</li><li>For the certificate, a score of " + resp.passing_score + "% or higher is required</li>";
+
+		bootbox.alert({
+			title: "Quiz result",
+			message: "<h2>Sorry you didn't pass the quiz.</h2><strong>You scored " + resp.score + " of " + resp.score_max + " correct.</strong><br><ul>" + cert_score_msg + "<li>Try again by clicking the \"Retake Quiz\" button</li></ul>",
+			size: 'medium'
+		});
+
+		//Show button to retake the quiz
+		$('<a onclick="location.reload()" class="button button-retake" style="display: inline-block;">Retake Quiz<span class="ui-icon ui-icon-refresh"></span></a>').prependTo($(".page-navigation .next"));
+	}
+
+	if (resp.ce_attempted === "cme") {
+		cme_text = '<div class="quiz-attempt quiz-attempt-cme">You submitted your answers for CME' + moc_text + ' credit. <span class="cme-tag cme-tag-' + cme_status + '">' + cme_caption + '</span></div>';
+	} else if (resp.ce_attempted === "cne") {
+		cme_text = '<div class="quiz-attempt quiz-attempt-cne">You submitted your answers for CNE credit. <span class="cne-tag cne-tag-' + cne_status + '">' + cne_caption + '</span></div>';
+	} else {
+		cme_text = '';
+	}
+
+	if (resp.completion_percent > 0) {
+		var $link = $('.custom-curriculum-menu .active-trail > a');
+		$link.tooltip('destroy');
+		$link.attr("data-original-title", resp.completion_percent.toString() + "% complete");
+		$link.attr('data-toggle', 'tooltip');
+		$link.tooltip();
+		if ($('.custom-curriculum-menu .active-trail .progress-display').length === 0) {
+			$('<div class="progress-display" style="width: ' + resp.completion_percent + '%;"></div>').insertBefore($(".custom-curriculum-menu .active-trail .weight"))
+			$('<span> - <span class="percent">' + resp.completion_percent + '%</span> complete</span>').insertAfter($('.breadcrumbs .main-title > a'));
+		} else {
+			$('.custom-curriculum-menu .active-trail .progress-display').css("width", resp.completion_percent + "%");
+			$('.breadcrumbs .main-title .percent').text(resp.completion_percent + "%");
+		}
+	}
+
+	$('<div class="quiz-attempts level3-status after"><h3 class="correct">Results: ' + resp.score + ' out of ' + resp.score_max + ' correct</h3>' + cme_text + '</div>').insertAfter($(".questions"));
+	$('<div class="quiz-attempts level3-status before"><h3 class="correct">Results: ' + resp.score + ' out of ' + resp.score_max + ' correct</h3>' + cme_text + '</div>').insertBefore($(".questions"));
+
+	// drugPopoverSetup(".fieldset .summary");
+	// Guidelines_setup(".fieldset .summary");
+	$('.fieldset [data-toggle="tooltip"]').tooltip({ html: true });
+	$('.fieldset [data-toggle="popover"]').popover();
+
+	setTimeout("checkHeight(1);", 2500);
+}
+
+function handleCustomCurriculumSurveyResponse(resp, animate_speed) {
+	// Check to see if this survey has already been answered
+	if ($(".quiz .unanswered").length === 0) {
+		console.log("No unanswered questions found, returning");
+		return;
+	}
+
+	// Mark the options in the survey
+	for (questionID in resp.corrections) {
+		markQuestionResponse(questionID, resp.corrections[questionID]);
+		$("#FS_" + questionID + " div.opt:not('.selected.correct')").hide();
+		$("#FS_" + questionID + " textarea").prop("disabled", true);
+		console.log("corrected question ID:", questionID);
+	}
+
+	// set the navigation
+	$(".page-navigation .submit .button").addClass("hide").hide();
+	$(".page-navigation .next .button").removeClass("hide").show();
+
+	$(".ce-progress .step.step-survey").addClass(["complete", "col-xs-6"]).removeClass(["step-current", "col-xs-12"]);
+	$(".ce-progress .step.step-print").addClass(["step-current", "col-xs-12"]).removeClass(["col-xs-6"]);
+	$(".ce-progress .step.step-survey a > *").unwrap();
+	var $step = $(".ce-progress .step.step-print > span.step");
+	$(".ce-progress .step.step-print").empty().append($step);
+	var cert_button_text = !resp.is_self_study ? (resp.is_final_certificate ? "Review Certificate" : "Print Certificate") : (resp.is_seeking_ce ? "Print CE Certificate" : (resp.is_final_certificate ? "Review Certificate" : "Print Certificate"));
+	var cert_button_url = !resp.is_self_study ? resp.certificate_url : (resp.is_seeking_ce ? (resp.earned_ce.cme ? "javascript:claimCME()" : "javascript:claimCNE()") : resp.certificate_url);
+	$(".ce-progress .step.step-print").append('<a href="' + cert_button_url + '" class="btn btn-ce btn-warning"><span class="glyphicon glyphicon-print"></span> ' + cert_button_text + '</a>');
+
+	$(".instructions-cne").addClass("hide").hide();
+
+	if (resp.completion_percent > 0) {
+		var $link = $('.custom-curriculum-menu .active-trail > a');
+		$link.tooltip('destroy');
+		$link.attr("data-original-title", resp.completion_percent.toString() + "% complete");
+		$link.attr('data-toggle', 'tooltip');
+		$link.tooltip();
+		if ($('.custom-curriculum-menu .active-trail .progress-display').length === 0) {
+			$('<div class="progress-display" style="width: ' + resp.completion_percent + '%;"></div>').insertBefore($(".custom-curriculum-menu .active-trail .weight"))
+			$('<span> - <span class="percent">' + resp.completion_percent + '%</span> complete</span>').insertAfter($('.breadcrumbs .main-title > a'));
+		} else {
+			$('.custom-curriculum-menu .active-trail .progress-display').css("width", resp.completion_percent + "%");
+			$('.breadcrumbs .main-title .percent').text(resp.completion_percent + "%");
+		}
+	}
+
+	$(".instructions-cne").addClass("hide").hide();
+
+	// scroll to top of page
+	$(window).scrollTop(0);
+
+	bootbox.dialog({
+		title: 'Thank you!',
+		message: "You feedback is essential to the curriculum's success.",
+		size: 'medium',
+		onEscape: true,
+		backdrop: true,
+		buttons: {
+			return: {
+				label: 'OK',
+				className: 'btn-primary',
+				callback: function() { }
+			}
+		}
+	})
+}
+
+function markQuestionResponse(question_ID, corrected_question, passed_ce = false) {
+	console.log("corrected question ID:", questionID);
+	if (corrected_question.option) {
+		const $selected_option = $("#FS_" + questionID + " .opt input[value=" + corrected_question.option.ID + "]");
+		if (corrected_question.is_correct) {
+			$selected_option.parent().before('<h4 class="correct">You chose this option correctly:</h4>');
+			$selected_option.parent().delay(1000).addClass("correct").addClass("selected");
+			$selected_option.closest(".fieldset").addClass("correct");
+		} else {
+			$selected_option.parent().before('<h4 class="incorrect">You answered:</h4>');
+			$selected_option.parent().delay(1000).addClass("incorrect").addClass("selected");
+			$selected_option.closest(".fieldset").addClass("incorrect");
+
+			if (passed_ce) {
+				const $correct_option = $("#FS_" + questionID + " .opt input[value=" + corrected_question.correct_answer.ID + "]");
+				$correct_option.parent().before('<h4 class="correct">This option was correct:</h4>');
+				$correct_option.parent().delay(1000).addClass("partial");
+			}
+		}
+	}
+
+	$("#FS_" + questionID).removeClass("unanswered").addClass("answered");
+	$("#FS_" + questionID + " .opt input").remove();
+}
+
+function pageNavigationPrev() {
+	pageNavigationNextButtonText(-1);
+	document.location = base_url + 'process.php?action=prev';
+
+}
+
+function toggleInstructions() {
+	if ($(".section-instructions-popup").is(":hidden")) {
+		$(".section-instructions-popup .close").fadeTo(0, 0);
+		$("#page-navigation-top .button-instructions").addClass("open");
+		$(".section-instructions-popup").slideDown(500);
+		$(".section-instructions-popup .close").delay(500).fadeTo(500, 1);
+	} else {
+		$(".section-instructions-popup").slideUp(500);
+		$(".section-instructions-popup .close").fadeTo(500, 0);
+		$("#page-navigation-top .button-instructions").removeClass("open");
+	}
+	checkHeight(500);
+}
+
+function toggleBibliographySearch() {
+	if ($(".section-bibliography-search-popup").is(":hidden")) {
+		$(".section-bibliography-search-popup .close").fadeTo(0, 0);
+		$("#page-navigation-top .button-bibliography-search").addClass("active-trail");
+		$(".section-bibliography-search-popup").slideDown(500);
+		$(".section-bibliography-search-popup .close").delay(500).fadeTo(500, 1);
+		$("#page-navigation-top .button-bibliography-search").html('<span class="ui-icon ui-icon-search"></span> Close Search');
+	} else {
+		if ($(".section-bibliography-search-popup input").val() != "") {
+			document.location = base_url + 'page/site/bibliography/author';
+		}
+		$(".section-bibliography-search-popup").slideUp(500);
+		$(".section-bibliography-search-popup .close").fadeTo(500, 0);
+		$("#page-navigation-top .button-bibliography-search").removeClass("active-trail");
+		$("#page-navigation-top .button-bibliography-search").html('<span class="ui-icon ui-icon-search"></span> Search');
+	}
+}
+
+function toggleDisclosures() {
+	if ($(".disclosures-container").is(":hidden")) {
+		$(".disclosures").addClass("open");
+		$(".disclosures-container .close").fadeTo(0, 0);
+		$(".disclosures-container").slideDown(500);
+		$(".disclosures-container .close").delay(500).fadeTo(500, 1);
+	} else {
+		$(".disclosures-container").slideUp(500);
+		$(".disclosures-container .close").fadeTo(500, 0);
+		$(".disclosures").removeClass("open");
+	}
+}
+
+function toggleCOLQuestion(id) {
+	if ($("#question-" + id + " .question-data").is(":hidden")) {
+		//Open Options
+		openCOLQuestion(id);
+	} else {
+		closeCOLQuestion(id);
+	}
+}
+
+function openCOLQuestion(id) {
+	$("#question-" + id + "").addClass("style-learn").removeClass("style-read");
+	$("#question-" + id + " .close").fadeTo(0, 0);
+	setTimeout('$("#question-' + id + ' .question-data").slideDown(250);', 250);
+	$("#question-" + id + " .close").delay(500).fadeTo(500, 1);
+	setTimeout('$("#question-' + id + '").next(".question-placeholder-' + id + '").addClass("active").css("height",($("#question-' + id + '").height()+30)+"px");', 525);
+	setTimeout('centerOptions("#question-' + id + '")', 500);
+}
+
+function closeCOLQuestion(id) {
+	$("#question-" + id + " .close").fadeTo(0, 0);
+	$("#question-" + id + " .question-data").slideUp(500, function() {
+		$("#question-" + id + "").addClass("style-read").removeClass("style-learn");
+		$("#question-" + id + "").next(".question-placeholder-" + id).removeClass("active").css("height", "auto");
+	});
+	//If we are signed in, and this is the first ever col question closed
+	if ($("body").hasClass("logged-in") && $("body").hasClass("")) {
+		//toggleCOLOptions();
+	}
+}
+
+function toggleCOLOptions() {
+	if ($("body").hasClass("logged-in")) {
+		var defined_buttons = {
+			main: {
+				label: '<span class="glyphicon glyphicon-ok"></span> Save Options',
+				className: "btn-primary",
+				callback: function() {
+					var state = $(".bootbox .questions-col-options .options input").serializeArray();
+
+					var request = $.ajax({
+						url: base_url + "json.php",
+						method: "GET",
+						data: { action: "setUserCOLPref", "to": state[0]['value'] },
+						dataType: "json"
+					});
+
+					//Update style of questions on the page
+					if (state[0]['value'] == "learn") {
+						$(".level4s-full-text .question.question-check-on-learning").each(function() {
+							$(this).removeClass("style-end");
+							var id = $(this).attr('id');
+							id = id.replace("question-", "");
+							openCOLQuestion(id);
+							$(".alert-col_pref_end").slideUp(250);
+						});
+					} else if (state[0]['value'] == "read") {
+						$(".level4s-full-text .question.question-check-on-learning").each(function() {
+							$(this).removeClass("style-end");
+							var id = $(this).attr('id');
+							id = id.replace("question-", "");
+							closeCOLQuestion(id);
+							$(".alert-col_pref_end").slideUp(250);
+						});
+					} else {
+						$(".level4s-full-text .question.question-check-on-learning").removeClass("style-learn").removeClass("style-read").removeClass("style-end").addClass("style-" + state[0]['value']);
+						$(".alert-col_pref_end").slideDown(250);
+						$(".question-placeholder").removeClass("active").css("height", "auto");
+					}
+
+					request.done(function(msg) {
+						console.log(msg);
+						return true;
+					});
+				}
+			}
+		};
+	} else {
+		var defined_buttons = {
+			main: {
+				label: '<i class="glyph-user-add"></i> Create an Account',
+				className: "btn-default",
+				callback: function() {
+					//Create Account
+					document.location = base_url + 'page/account/register';
+				}
+			},
+			create: {
+				label: '<span class="glyphicon glyphicon-log-in"></span> Sign In',
+				className: "btn-primary",
+				callback: function() {
+					//Sign In
+					document.location = base_url + 'alternate';
+				}
+			}
+		};
+	}
+	bootbox.dialog({
+		message: $("#questions-col-options").html(),
+		title: "Check-On-Learning Question Options",
+		buttons: defined_buttons
+	});
+}
+
+function setupReferenceCategories() {
+	//Go through all references and hide the reference categories that don't apply
+	if ($("#references .ref-cats").length > 0) {
+		$("#references .ref-cats div.cat-select").click(function() {
+			$("#references .ref-cats .cat-select").removeClass("active-trail");
+			$(this).addClass("active-trail");
+
+			var current_cat = $("#references .ref-cats div.cat-select.active-trail").attr("data-filter");
+			var current_cat_title = $("#references .ref-cats div.cat-select.active-trail").text();
+			if (!current_cat) {
+				current_cat = 0;
+			}
+
+			var all = $("#references .refs .ref");
+			var active = $("#references .refs .ref.ref-cat-" + current_cat);
+
+			all.slideUp(0);
+			active.slideDown(0);
+
+			if ($("body").hasClass("mobile")) {
+				$("#references .ref-info").html('<span class="count">' + active.length + ' of ' + all.length + '</span> shown');
+			} else {
+				$("#references .ref-info").html('Displaying <span class="count">' + active.length + ' of ' + all.length + '</span> references.');
+			}
+
+			$("#references .cat-title").text(current_cat_title);
+		});
+
+		$("#references .ref-cats div.cat-select.active-trail").click();
+
+		//Remove ref cats that are not in the list
+		$("#references .ref-cats div.cat-select").each(function() {
+			//See how many references there are with this category
+			var current_cat = $(this).attr("data-filter");
+			if (current_cat) {
+				var refs = $("#references .refs .ref.ref-cat-" + current_cat);
+				$(this).addClass("ref-count-" + refs.length);
+			}
+		});
+
+	}
+}
+
+function setupTrialCategories() {
+	//Go through all references and hide the reference categories that don't apply
+	if ($("#clinical-trials .trial-cats").length > 0) {
+		$("#clinical-trials .trial-cats div.cat-select").click(function() {
+			$("#clinical-trials .trial-cats .cat-select").removeClass("active-trail");
+			$(this).addClass("active-trail");
+
+			var current_cat = $("#clinical-trials .trial-cats div.cat-select.active-trail").attr("data-filter");
+			var current_cat_title = $("#clinical-trials .trial-cats div.cat-select.active-trail").text();
+			if (!current_cat) {
+				current_cat = 0;
+			}
+
+			var all = $("#clinical-trials .trial");
+			var active = $("#clinical-trials .trial.ref-cat-" + current_cat);
+
+			all.slideUp(0);
+			active.slideDown(0);
+
+			if ($("body").hasClass("mobile")) {
+				$("#clinical-trials .trial-info").html('<span class="count">' + active.length + ' of ' + all.length + '</span> shown');
+			} else {
+				$("#clinical-trials .trial-info").html('Displaying <span class="count">' + active.length + ' of ' + all.length + '</span> clinical trials.');
+			}
+
+			$("#clinical-trials .cat-title").text(current_cat_title);
+		});
+
+		$("#clinical-trials .trial-cats div.cat-select.active-trail").click();
+
+		//Remove ref cats that are not in the list
+		$("#clinical-trials .trial-cats div.cat-select").each(function() {
+			//See how many references there are with this category
+			var current_cat = $(this).attr("data-filter");
+			if (current_cat) {
+				var refs = $("#clinical-trials .trial.ref-cat-" + current_cat);
+				$(this).addClass("ref-count-" + refs.length);
+			}
+		});
+
+	}
+}
+
+function checkPageNavigation() {
+	pn_height = $("#page-content").height();
+	var h = $(window).height();
+	var p = $(window).scrollTop();
+
+	//console.log(pn_height+", "+p+", "+h);
+	if ((p + h) - 250 < pn_height) {
+		if (!$("#page-navigation").hasClass("fixed")) {
+			$("#page-navigation").fadeTo(0, 0).addClass("fixed").fadeTo(500, 1.0);
+		}
+	} else {
+		$("#page-navigation").removeClass("fixed");
+	}
+}
+
+function checkHeight(ani) {
+
+	return 1;
+
+	if ($("body").hasClass("mobile")) {
+		return 1;
+	}
+
+	var s = $("#sidebar").height();
+	var pc = $("#page-content").height() + $("#page-navigation").height();
+	var c = $("#page").height();
+	//console.log(s+">"+c);
+	if (s > pc) {
+		if (ani) {
+			$("#page").animate({ height: s + 35 + "px" });
+		} else {
+			$("#page").css("height", s + 35 + "px");
+		}
+		$("#page").css("min-height", s + 35 + "px");
+	} else {
+		$("#page").css("height", "auto");
+		setTimeout('$("#page").css("min-height",' + pc + '+"px");', 250);
+	}
+
+	if ($("#sidebar .controls").length) {
+		if ($("#page-content").height() < $("#sidebar .controls").height() + 100) {
+			$("#page-content").css("min-height", ($("#sidebar").height() + $("#sidebar .controls").height()) + "px");
+		} else {
+			$("#page-content").css("min-height", "default");
+		}
+	}
+}
+
+function scrollPage(dir) {
+	var to = 0;
+	var h = $(window).height();
+	if (dir == 1) {
+		to = "+=" + (h - 200);
+	} else if (dir == 0) {
+		to = 0;
+	} else if (dir == -1) {
+		to = "-=" + (h - 200);
+	}
+	// Stop the animation if the user scrolls. Defaults on .stop() should be fine
+	$(window).bind("scroll.oc mousedown.oc DOMMouseScroll.oc mousewheel.oc keyup.oc", function(e) {
+		if (e.which > 0 || e.type === "mousedown" || e.type === "mousewheel") {
+			$("html,body").stop(true);
+			$(window).unbind('scroll.oc mousedown.oc DOMMouseScroll.oc mousewheel.oc keyup.oc');
+		}
+	});
+	$("html,body").animate({ scrollTop: to + "px" }, 1000, "swing", function() {
+		$(window).unbind("scroll.oc mousedown.oc DOMMouseScroll.oc mousewheel.oc keyup.oc");
+	});
+
+	console.log("scrolling to " + to);
+}
+
+
+function progressTracker() {
+
+	if ($('.progress-tracker-hover[data-toggle="open"]').length) {
+		$(".progress-tracker-hover").animate({ bottom: "-" + $(".progress-tracker-hover").height() + "px", opacity: 0 });
+		$(".progress-tracker-hover").attr("data-toggle", "closed");
+
+	} else {
+		$(".progress-tracker-hover").animate({ bottom: "0px", opacity: 1 });
+		$(".progress-tracker-hover").attr("data-toggle", "open");
+	}
+	return;
+}
+
+function loadProgressTracker() {
+	$('<div class="progress-tracker-hover" data-toggle="closed"><div id="progress-tracker" style="height:300px"><div class="loading-animation loading-animation-dark">Loading...</div></div></div>').appendTo('#wrap');
+	$(".progress-tracker-hover").css({ bottom: "-" + $(".progress-tracker-hover").height() + "px", opacity: 0 });
+	$('<div class="progress-tracker-close-big" onclick="progressTracker()"></div>').appendTo(".progress-tracker-hover");
+	$("#progress-tracker a").popover({ trigger: 'hover', placement: 'top', container: "body", html: true, content: function() { return $(this).parent().find(".data-content").html() } });
+
+	$('.progress-tracker-hover').load("" + base_url + "process.php?action=progressTracker", function(data) {
+		if ($(".progress-tracker-hover").attr("data-toggle") === "open") {
+			$(".progress-tracker-hover").animate({ bottom: "0px", opacity: 1 });
+		} else {
+			$(".progress-tracker-hover").css({ bottom: "-" + $(".progress-tracker-hover").height() + "px", opacity: 0 });
+		}
+		$('<div class="progress-tracker-close-big" onclick="progressTracker()"></div>').appendTo(".progress-tracker-hover");
+		$("#progress-tracker a").popover({ trigger: 'hover', placement: 'top', container: "body", html: true, content: function() { return $(this).parent().find(".data-content").html() } });
+	});
+}
+
+function loadProgressTrackerByEdition(selector) {
+	return new Promise(function(resolve, reject) {
+		var $container = $(selector);
+		var edition = $container.data("progresstracker");
+
+		if (edition) {
+			$container.load("" + base_url + "process.php?action=progressTrackerEdition&edition=" + edition, function(data) {
+				var scope = this;
+				$(this).removeClass("loading");
+				setTimeout(function() {
+					$(".progress-tracker-container", scope).css("opacity", "1");
+					resolve();
+				}, 250);
+			});
+		} else {
+			reject();
+		}
+	});
+
+
+
+}
+
+function toggleProgressTracker(ID) {
+	if (typeof (ID) === 'undefined') ID = "";
+
+	if ($("#progress-tracker").length == 0) {
+		document.location = "#jump-progress-tracker";
+		return;
+	}
+
+	if ($("#progress-tracker .contents").is(":visible")) {
+		$("#progress-tracker .contents").slideUp(500, function() {
+			$("#progress-tracker .contents").html("");
+		});
+		//Hide it
+		$("#progress-tracker").animate({ bottom: "-25px" }, 500, function() {
+			$("#progress-tracker").removeClass("active");
+			$("#progress-tracker .toggle a span.glyphicon-chevron-down").removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+		});
+
+		$("#progress-tracker .toggle .title").text("My Progress Tracker");
+	} else {
+		//Show it
+		$("#progress-tracker .toggle a span.glyphicon-chevron-up").removeClass("glyphicon-chevron-up").addClass("glyphicon-chevron-down");
+		$("#progress-tracker").animate({ bottom: "0px" }, 500).addClass("pending");
+		max = $(window).height() - 75;
+		if (max > 700) {
+			max = "700px";
+		} else {
+			max = max + "px";
+		}
+
+		if (ID) {
+			$("#progress-tracker .toggle .title").text("User's Progress");
+		}
+
+		ajaxTimeout = window.setTimeout("bootbox.alert('<h3>Sorry! The request seemed to have timed out. Please try again.</h3>'); toggleProgressTracker();", 15000);
+		$("#progress-tracker .contents").load(base_url + "process.php?action=progressTracker&ID=" + ID, function() {
+			$("#progress-tracker .question-list .desktop a").tooltip({ placement: 'bottom', html: true });
+			$("#progress-tracker .contents").css("max-height", (max));
+			$("#progress-tracker .contents").slideDown(500);
+			$("#progress-tracker").addClass("active").removeClass("pending");
+			setupProgressTracker($("#progress-tracker"));
+			window.clearTimeout(ajaxTimeout);
+		});
+	}
+}
+
+
+//Mainly history
+function setupProgressTracker(parent) {
+	if (typeof (parent) === 'undefined') parent = $("body");
+
+	parent.find(".session-history").slideUp(0);
+	$(".session-history-toggle").unbind("click").click(function() {
+		var clicked = $(this).parent().parent().parent();
+		if (clicked.find(".session-history").is(":visible")) {
+			//Hide it
+			clicked.find(".session-history").hide(0);
+			clicked.find(".session-history .contents").slideUp(0);
+			$(this).find(".glyphicon").removeClass("glyphicon-folder-open").addClass("glyphicon-folder-closed");
+		} else {
+			clicked.find('.session-history').addClass("pending").show(0);
+			$(this).find(".glyphicon").removeClass("glyphicon-folder-closed").addClass("glyphicon-folder-open");
+			clicked.find(".session-history .contents").load(base_url + "process.php?action=progressTrackerHistory&ID=" + clicked.find(".session-history").attr("user-id") + "&quiz_ID=" + clicked.find(".session-history").attr("quiz-id"), function() {
+				clicked.find(".question-list .desktop a").tooltip({ placement: 'bottom', html: true });
+				clicked.find(".session-history .contents").show(0);
+				clicked.find(".session-history").addClass("active").removeClass("pending");
+				clicked.find(".has-tooltip").tooltip({ placement: 'top', html: true });
+			});
+		}
+
+	});
+}
+
+var newWin;
+var popupblocker_message;
+function claimCME() {
+	console.log("Handing off to CME popup");
+
+	//Popup middle 455px,300px
+	var x = 100;
+	var y = 0;
+	newWin = window.open(base_url + "cme.php", "CME" + Math.round(Math.random() * 10000), "status=0,toolbar=0,location=0,menubar=0,height=700,width=1100,scrollbars=1,resizable=1");
+
+	popupblocker_message = bootbox.dialog({
+		message: $("#popupblocker-message").html(),
+		title: "Continuing Education Credit Earned",
+		buttons: {
+			success: {
+				label: '<span class="glyphicon glyphicon-new-window"></span> Claim CME Credit',
+				className: "btn-success",
+				callback: function() {
+					claimCME();
+					console.log("Claimed CME, Closed");
+				}
+			}
+		},
+		show: false
+	});
+
+	// if(setTimeout("checkPopupBlocker(newWin)",1000)){
+	// 		if(newWin){
+	// 			newWin.moveTo(x,y);
+	// 		}	
+	// 	}
+
+	return false;
+}
+function claimCNE() {
+	console.log("Handing off to CNE popup");
+	//Popup middle 455px,300px
+	var x = 100;
+	var y = 0;
+	newWin = window.open(base_url + "cne.php", "CNE" + Math.round(Math.random() * 10000), "status=0,toolbar=0,location=0,menubar=0,height=700,width=1100,scrollbars=1,resizable=1");
+
+	popupblocker_message = bootbox.dialog({
+		message: $("#popupblocker-message").html(),
+		title: "Continuing Education Credit Earned",
+		buttons: {
+			success: {
+				label: '<span class="glyphicon glyphicon-new-window"></span> Claim CNE Credit',
+				className: "btn-success",
+				callback: function() {
+					claimCNE();
+					console.log("Claimed CNE, Closed");
+				}
+			}
+		},
+		show: false
+	});
+
+	// if(setTimeout("checkPopupBlocker(newWin)",1000)){
+	// 		if(newWin){
+	// 			newWin.moveTo(x,y);
+	// 		}	
+	// 	}
+}
+
+function checkAnswer() {
+
+
+	console.log("Check answer triggered");
+
+	if ($(".questions.question-bank .fieldset.unanswered").length && $(".questions.question-bank .fieldset.no-selection").length == 0) {
+		//For questions banks, we will throw a warning if they did not pick an answer
+		if ($(".questions.question-bank .fieldset.unanswered .opt.selected").length == 0) {
+			bootbox.confirm({
+				title: 'No answer selected',
+				message: '<p class="lead">If you continue, this question will be marked as <span class="label label-danger">incorrect</span>, and the correct answer will be shown.</p>',
+				buttons: {
+					confirm: {
+						label: '<span class="glyphicon glyphicon-check"></span> Mark Incorrect and View Answer',
+						className: 'btn-default'
+					},
+					cancel: {
+						label: 'Cancel',
+						className: 'btn-primary'
+					}
+				},
+				callback: function(result) {
+					if (result) {
+						//Initiate result
+						$(".questions .fieldset").addClass("no-selection");
+						checkAnswer();
+					}
+				}
+			});
+
+			return;
+		}
+	}
+
+	$(".nextButton").hide();
+
+	$(".button-checkAnswer").button('loading');
+	$(".page-navigation .next .button").hide();
+	var data_array = $(".questions input:checked, .questions input:hidden, .questions textarea, .questions input.text").serializeArray();
+	var data = $.param(data_array);
+
+	if (data_array[data_array.length - 1].value == "CME") {
+		CME = 1;
+		CNE = 0;
+	} else if (data_array[data_array.length - 1].value == "CNE") {
+		CNE = 1;
+		CME = 0;
+	} else {
+		CME = 0;
+		CNE = 0;
+	}
+	//console.log(data_array);
+
+	if (questionAnswered) {
+
+		if ($("#page.section-qb").length) {
+			var completed = $(".question-list .desktop a.correct").length + $(".question-list .desktop a.incorrect").length;
+			if ($(".question-list .desktop a.active").hasClass("correct") || $(".question-list .desktop a.active").hasClass("incorrect")) {
+				//We are reviewing questions, all good
+			} else {
+				//Active question was just answered
+				completed++;
+			}
+			if (completed == $(".question-list .desktop a").length) {
+				document.location = $("#category-holder li.level2.active-trail").find("a").attr('href');
+				console.log("going to summary");
+				return true;
+			} else {
+				if ($(".question-list .desktop a.active").next("a").length > 0) {
+					document.location = $(".question-list .desktop a.active").next("a").attr('href');
+				} else {
+					document.location = $($(".question-list .desktop a").not(".correct,.incorrect")[0]).attr('href');
+				}
+				console.log("going to next question");
+				return true;
+			}
+		} else {
+			document.location = base_url + "process.php?action=next";
+		}
+
+	} else {
+
+		$.post(base_url + "json.php", data, function(resp, textStatus, XMLHttpRequest) {
+
+			console.log("Handing off to response handler");
+			checkAnswerHandleResponse(resp);
+
+			pageNavigationNextButtonText(0);
+			setTimeout("checkHeight();", 1000);
+
+			$(".submit-options").hide();
+
+		}, "json");
+
+	}
+}
+
+function checkAnswerHandleResponse(resp, animate_speed) {
+
+	if (typeof (animate_speed) === 'undefined') animate_speed = 500;
+
+	console.log("Handle response triggered");
+	if ($(".section-self-assessment .unanswered").length == 0 && $(".quiz .unanswered").length == 0 && $(".question-bank .unanswered").length == 0) {
+		console.log("Unanswered found, returning");
+		return;
+	}
+
+	var quiz = false;
+	if ($("#page-content .quiz").length) {
+		quiz = true;
+	}
+
+	var correct = 0;
+	var total = 0;
+
+	var total_q = $("#page-content .quiz .fieldset").length;
+
+	var quiz_CNE = 0;
+
+	$(resp).each(function(q, val) {
+		var answered = 0;
+		var correct_at = -1;
+		current_q = this;
+		$(".page-navigation .next .button").show();
+
+		if ($(this).attr('status') == "fail") {
+			console.log("Failed");
+			return true;
+		}
+
+		if ($(this).attr('quiz_CNE') > 0) {
+			quiz_CNE = $(this).attr('quiz_CNE');
+		}
+
+		$("#FS_" + $(this).attr('question_ID') + " .opt input").each(function(i) {
+			//Selected correct answer: 3
+			//Correct answer, not selected: 2
+			//Selected answer, but not correct: 1
+			//Not selected, not correct: 0
+
+			switch ($(current_q).attr('options')[$(this).val()]) {
+				case 0:
+					if (quiz_CNE) {
+						$(this).parent().addClass("hidden").fadeTo(500, 0).hide(500);
+					}
+					if (quiz) {
+						//$(this).parent().addClass("hidden");
+					} else {
+						$(this).parent().addClass("hidden").fadeTo(500, 0).hide(500);
+					}
+					//console.log("Incorrect not selected");
+					break;
+				case 1:
+					$(this).parent().before('<h4 class="incorrect">You answered:</h4>');
+					$(this).parent().delay(1000).addClass("incorrect").addClass("selected");
+					//console.log("Selected");
+					answered++;
+					break;
+				case 2:
+					$(this).parent().before('<h4 class="correct">This option was correct:</h4>');
+					$(this).parent().delay(1000).addClass("partial");
+					//console.log("Correct but not selected");
+					total++;
+					break;
+				case 3:
+					if (quiz_CNE) {
+						$(this).parent().before('<h4 class="correct">You chose this option:</h4>');
+					} else {
+						$(this).parent().before('<h4 class="correct">You chose this option correctly:</h4>');
+					}
+					$(this).parent().delay(1000).addClass("correct").addClass("selected");
+					//console.log("Correct and selected");
+					answered++;
+					total++;
+					correct++;
+					break;
+			}
+
+			questionAnswered = 1;
+
+		});
+
+		//Go through options and mark question correct/incorrect
+		$(".fieldset").each(function() {
+			$(this).addClass("incorrect");
+
+			if ($(this).children(".selected.correct").length) {
+				$(this).removeClass("incorrect").addClass("correct");
+			}
+
+			$(this).find("textarea").attr('disabled', 'disabled');
+		});
+		$("#FS_" + $(this).attr('question_ID')).removeClass("unanswered").addClass("answered");
+		$("#FS_" + $(this).attr('question_ID') + " .opt input").remove();
+
+		if (answered == 0) {
+			if (quiz_CNE) {
+				$("#FS_" + $(this).attr('question_ID') + " h3").after('<h4 class="correct">You answered:</h4>');
+			} else {
+				$("#FS_" + $(this).attr('question_ID') + " h3").after('<h4 class="incorrect">You did not answer this question.</h4>');
+			}
+		}
+		var image_sum = '';
+
+		if ($(this).attr('image_sum_url') != "" && $(this).attr('image_sum_url') != undefined) {
+			image_sum = '<a class="image" href="' + $(this).attr('image_sum_url') + '" title="' + $(this).attr('image_sum_caption') + '" alt=""><img src="' + $(this).attr('image_sum_url').replace(".jpg", "_thumb.jpg") + '" alt="' + $(this).attr('image_sum_caption') + '" /></a>';
+		}
+
+		if ($(this).attr('summary') != "" && $(this).attr('summary') != null) {
+			$("#FS_" + $(this).attr('question_ID') + "").append('<div class="summary clearfix">' + image_sum + '<b>Summary</b><br />' + $(this).attr('summary') + '</div>');
+
+			documentsFullScreen("#FS_" + $(this).attr('question_ID') + " .summary .document");
+			tablesFullScreen("#FS_" + $(this).attr('question_ID') + " .summary .inline-table-link");
+			swapImagesToHQ(true);
+
+			$("#FS_" + $(this).attr('question_ID') + " .summary a.document").not(".document-series").colorbox({
+				onComplete: function() { colorBoxSetup() }, title: function () {
+					var desc = $(this).attr('alt');
+					var title = $(this).attr('title');
+					if (title == "") {
+						title = $(this).attr('data-original-title');
+					}
+					return '<strong>' + title + '</strong><br />' + desc;
+				}, maxWidth: colorbox_max_width,
+				maxHeight: "100%"
+			});
+
+		}
+
+		if ($(this).attr('reference') != "") {
+
+			if ($("#page.section-qb").length) {
+				$('<div class="reference"><b>References</b><br />' + $(this).attr('reference') + '<br /></div>').insertAfter($(".questions .question-info"));
+			} else {
+				$("#FS_" + $(this).attr('question_ID') + "").append('<div class="reference"><b>References</b><br />' + $(this).attr('reference') + '<br /></div>');
+			}
+
+			$(".reference a").addClass("ref-popup").click(function (e) {
+				e.preventDefault();
+				openRef($(this).attr('href'));
+				return false;
+			});
+		}
+
+		//TODO: This should be a function
+		$("#FS_" + $(this).attr('question_ID') + " a.image").not(".document-series").colorbox({
+			onComplete: function () { colorBoxSetup() }, title: function () {
+				var desc = $(this).attr('alt');
+				var title = $(this).attr('title');
+				return '<strong>' + title + '</strong><br />' + desc;
+			}, maxWidth: colorbox_max_width,
+			maxHeight: "100%"
+		});
+
+		pageNavigationNextButtonText(1);
+
+		if ($("body").hasClass("mobile") || $("#page.menu-closed").length) {
+			swapImagesToHQ(true);
+		}
+
+		$(".reference,.summary").hide().slideDown(animate_speed);
+		if ($("body").hasClass("mobile")) {
+			$("html,body").animate({ scrollTop: ($(".fieldset h3").offset().top - 5) + "px" }, animate_speed);
+		}
+
+		if ($("#page.section-qb").length) {
+			$(".button-checkAnswer").button('done');
+			if ($("body.logged-in .questions.question-bank.unanswered-0").length || ($("body.logged-in .questions.question-bank.unanswered-1").length && $("body.logged-in .questions.question-loaded-unanswered").length == 1) || $("body.logged-in .quiz.quiz-cne.survey").length == 1) {
+				//Topic is complete
+				$(".button-checkAnswer").html('Topic Summary <span class="glyphicon glyphicon-chevron-right"></span>');
+			} else {
+				$(".button-checkAnswer").html('Next Question <span class="glyphicon glyphicon-chevron-right"></span>');
+			}
+
+			$(".controls .button-skip").slideUp(animate_speed);
+
+			$(".provide-feedback").slideDown(animate_speed);
+
+			//Move correct answer to front
+			$("#FS_" + $(this).attr('question_ID') + " h4.correct").insertAfter($("#FS_" + $(this).attr('question_ID') + " h3.question-caption"));
+			$("#FS_" + $(this).attr('question_ID') + " div.opt.partial,#FS_" + $(this).attr('question_ID') + " div.opt.correct").insertAfter($("#FS_" + $(this).attr('question_ID') + " h4.correct"));
+
+			if ($(".questions.question-bank.progress-100").length) {
+				//Topic is complete
+			}
+
+			if (quiz_CNE) {
+				$(".controls a.button-checkAnswer").addClass("btn-lg");
+			}
+
+			//Update question list
+			if (correct) {
+				$("body.logged-in .question-list a.active").addClass("correct");
+			} else {
+				$("body.logged-in .question-list a.active").addClass("incorrect");
+			}
+
+			if ($("body.logged-in .quiz.quiz-cne.survey").length == 1) {
+				//We just submitted the CE survey
+
+				document.location = $("#category-holder li.active-trail > a").attr('href');
+			}
+		}
+	});
+
+	//If more than one question, set total possible to total questions
+	if (total_q > 1) {
+		total = total_q;
+	}
+
+	if (quiz && total != 0) {
+		console.log(correct + " " + total);
+
+		var ce_type = '';
+		if (CNE) {
+			ce_type = 'cne';
+		} else if (CME) {
+			ce_type = 'cme';
+		}
+
+		if (correct / total >= 0.8) {
+			cme_status = 'earned';
+			cme_caption = '<span class="ui-icon ui-icon-circle-check"></span> CME Earned';
+			$(".page-navigation .button-cme").attr('display', 'inline-block');
+			cne_status = 'earned';
+			cne_caption = '<span class="ui-icon ui-icon-circle-check"></span> CNE Earned';
+			$(".page-navigation .button-cne").attr('display', 'inline-block');
+			if (CNE || CME) {
+				//Redirect to CE quiz
+				//If it's true then we are using IE
+				$('<a class="button button-' + ce_type + '" href="quiz/cne" title="Complete the CE survey to claim your CE credit."><span class="ui-icon ui-icon-print"></span>Complete CE Survey</a>').insertBefore(".page-navigation .right.next .button");
+				//Remove standard next button
+				$('.page-navigation .right.next .button-next').remove();
+			} else {
+				$('<a class="button button-coc" href="quiz/cne" title="Complete the survey to continue progress toward certificate."><span class="ui-icon ui-icon-print"></span>Complete Survey</a>').insertBefore(".page-navigation .right.next .button");
+				//Remove standard next button
+				$('.page-navigation .right.next .button-next').remove();
+			}
+		} else if (quiz_CNE < 1) {
+			cme_status = 'attempted';
+			cme_caption = 'CME Attempted';
+			cne_status = 'attempted';
+			cne_caption = 'CNE Attempted';
+			//Do not show the Claim CME Credit button
+			$(".page-navigation .button-cme").hide();
+			//Do not show the Claim CME Credit button
+			$(".page-navigation .button-cne").hide();
+
+			//Show button to retake the quiz
+			$('<a onclick="location.reload()" class="button button-retake" style="display: inline-block;">Retake Quiz<span class="ui-icon ui-icon-refresh"></span></a>').prependTo($(".page-navigation .next"));
+
+			//console.log("Removing CME/CNE and option to retake");
+
+		}
+		if (CME) {
+			cme_text = '<div class="quiz-attempt quiz-attempt-cme">You submitted your answers for CME credit. <span class="cme-tag cme-tag-' + cme_status + '">' + cme_caption + '</span></div>';
+		} else if (CNE) {
+			cme_text = '<div class="quiz-attempt quiz-attempt-cne">You submitted your answers for CNE credit. <span class="cne-tag cne-tag-' + cne_status + '">' + cne_caption + '</span></div>';
+		} else {
+			cme_text = '';
+		}
+
+		if (quiz_CNE == 5) {
+			//Redirect to complete profile
+			//document.location = $("#page-navigation .button-next").attr("href");
+			document.location.reload();
+		} else if (quiz_CNE == 10) {
+			//$("#page-navigation .button-next").click();
+			document.location.reload();
+		} else if (quiz_CNE == 1) {
+			//Display popup for CNE
+			if (CME) {
+				claimCME();
+			} else if (CNE) {
+				claimCNE();
+			}
+
+			//Change buttons
+
+		} else {
+			$('<div class="quiz-attempts level3-status after"><h3 class="correct">Results: ' + correct + ' out of ' + total + ' correct</h3>' + cme_text + '</div>').insertAfter($(".questions"));
+
+			$('<div class="quiz-attempts level3-status before"><h3 class="correct">Results: ' + correct + ' out of ' + total + ' correct</h3>' + cme_text + '</div>').insertBefore($(".questions"));
+		}
+	}
+
+	drugPopoverSetup(".fieldset .summary");
+	Guidelines_setup(".fieldset .summary");
+	$('.fieldset [data-toggle="tooltip"]').tooltip({ html: true });
+	$('.fieldset [data-toggle="popover"]').popover();
+
+	setTimeout("checkHeight(1);", 2500);
+}
+
+function colCheckAnswer(id,item){
+	$(".question-"+id+"").addClass("loading");
+	
+	console.log("Check answer triggered");
+	
+	var data_array = item.find(".questions input:checked, .questions input:hidden,.questions textarea,.questions input.text").serializeArray();
+	var data = $.param(data_array);
+	
+	$.post(base_url+"json.php", data, function(resp,textStatus, XMLHttpRequest){
+		
+		console.log("Handing off to response handler for question");
+		colCheckAnswerHandleResponse(resp,id);
+		setTimeout("checkHeight();",1000);
+		
+	},"json");
+	
+}
+
+function controller_colCheckAnswer(id, item) {
+	const data_array = item.find(".questions input:checked, .questions input:hidden,.questions textarea,.questions input.text").serializeArray();
+	const data = $.param(data_array);
+
+	document.querySelectorAll(`.question-${id}`).forEach(el => {
+
+		const content = el.querySelector('.question-data-content .question-options')
+
+		const div = document.createElement('div')
+		div.classList.add('question-data-content-loading')
+		div.innerText = "loading..."
+		div.style.height = $(content).height()
+	
+		content.querySelectorAll('.opt').forEach(el => el.style.display = 'none')
+		content.appendChild(div)
+	})
+
+	// setTimeout(() => {
+
+	// 	document.querySelectorAll(`.question-${id}`).forEach(el => {
+	// 		const content = el.querySelector('.question-data-content .question-options')
+	// 		const div = content.querySelector('.question-data-content-loading')
+	// 		content.removeChild(div)
+	// 		content.querySelectorAll('.opt').forEach(el => el.style.display = 'flex')
+	// 	})
+	// }, 2000)
+	$.post(base_url + "json.php", data, function (resp, textStatus, XMLHttpRequest) {
+		document.querySelectorAll(`.question-${id}`).forEach(el => {
+			const content = el.querySelector('.question-data-content .question-options')
+			const div = content.querySelector('.question-data-content-loading')
+			content.removeChild(div)
+			content.querySelectorAll('.opt').forEach(el => el.style.display = 'flex')
+		})
+
+		colCheckAnswerHandleResponse(resp, id);
+		setTimeout("checkHeight();", 1000);
+	}, "json");
+
+}
+
+function colCheckAnswerHandleResponse(resp, id) {
+
+	var quiz = false;
+	var correct = 0;
+	var total = 0;
+	var total_q = $(".question-" + id + " .quiz .fieldset").length;
+
+	$(resp).each(function (q, val) {
+		var answered = 0;
+		var correct_at = -1;
+		current_q = this;
+
+		if ($(this).attr('status') == "fail") {
+			console.log("Failed");
+			return true;
+		}
+
+		$(".question-" + $(this).attr('question_ID') + " .opt input").each(function (i) {
+			//Selected correct answer: 3
+			//Correct answer, not selected: 2
+			//Selected answer, but not correct: 1
+			//Not selected, not correct: 0
+
+			switch ($(current_q).attr('options')[$(this).val()]) {
+				case 0:
+					if (quiz) {
+						//$(this).parent().addClass("hidden");
+					} else {
+						$(this).parent().addClass("hidden").fadeTo(500, 0).hide(500);
+					}
+					//console.log("Incorrect not selected");
+					break;
+				case 1:
+					$(this).parent().before('<h4 class="incorrect">You answered:</h4>');
+					$(this).parent().delay(1000).addClass("incorrect").addClass("selected");
+					//console.log("Selected");
+					answered++;
+					break;
+				case 2:
+					$(this).parent().before('<h4 class="correct">This option was correct:</h4>');
+					$(this).parent().delay(1000).addClass("partial");
+					//console.log("Correct but not selected");
+					total++;
+					break;
+				case 3:
+					$(this).parent().before('<h4 class="correct">You chose this option correctly:</h4>');
+					$(this).parent().delay(1000).addClass("correct").addClass("selected");
+					//console.log("Correct and selected");
+					answered++;
+					total++;
+					correct++;
+					break;
+			}
+
+		});
+
+		//Go through options and mark question correct/incorrect
+		$(".question-" + id + " .fieldset,.question-" + id + "").each(function () {
+			$(this).addClass("incorrect");
+
+			if ($(this).find(".selected.correct").length) {
+				$(this).removeClass("incorrect").addClass("correct");
+			}
+		});
+
+		$(".question-" + $(this).attr('question_ID') + ", .question-" + $(this).attr('question_ID') + " .fieldset").removeClass("unanswered").addClass("answered");
+		$(".question-" + $(this).attr('question_ID') + " .opt input").remove();
+
+		if (answered == 0) {
+			$(".question-" + $(this).attr('question_ID') + " .fieldset h3").after('<h4 class="incorrect">You did not answer this question.</h4>');
+		}
+		var image_sum = '';
+
+		if ($(this).attr('image_sum_url') != "" && $(this).attr('image_sum_url') != undefined) {
+			image_sum = '<a class="image" href="' + $(this).attr('image_sum_url') + '" title="' + $(this).attr('image_sum_caption') + '" alt=""><img src="' + $(this).attr('image_sum_url').replace(".jpg", "_thumb.jpg") + '" alt="' + $(this).attr('image_sum_caption') + '" /></a>';
+		}
+
+		if ($(this).attr('summary') != "") {
+			$(".question-" + $(this).attr('question_ID') + " .fieldset").append('<div class="summary">' + image_sum + '' + $(this).attr('summary') + '</div>');
+
+			documentsFullScreen(".question-" + $(this).attr('question_ID') + " .summary .document");
+
+			$(".question-" + $(this).attr('question_ID') + " .summary a.document").not(".document-series").colorbox({
+				onComplete: function () { colorBoxSetup() }, title: function () {
+					var desc = $(this).attr('alt');
+					var title = $(this).attr('title');
+					if (title == "") {
+						title = $(this).attr('data-original-title');
+					}
+					return '<strong>' + title + '</strong><br />' + desc;
+				}, maxWidth: colorbox_max_width,
+				maxHeight: "100%"
+			});
+
+		}
+
+		$(".question-" + $(this).attr('question_ID') + " a.image").not(".document-series").colorbox({
+			onComplete: function () { colorBoxSetup() }, title: function () {
+				var desc = $(this).attr('alt');
+				var title = $(this).attr('title');
+				if (title == "") {
+					title = $(this).attr('data-original-title');
+				}
+				return '<strong>' + title + '</strong><br />' + desc;
+			}, maxWidth: colorbox_max_width,
+			maxHeight: "100%"
+		});
+		setTimeout('$("#question-' + id + '.style-learn").next(".question-placeholder-' + id + '").addClass("active").css("height",($("#question-' + id + '").height()+30)+"px");', 525);
+	});
+
+	$(".question-" + id + "").removeClass("loading");
+}
+
+function expertCaseViewResults() {
+	if ($("#cases-holder .section-results .content .responses").length) {
+		expertCaseCheckAnswerHandleResponse($("#cases-holder .section-results .content").html());
+	} else {
+		expertCaseCheckAnswer();
+	}
+}
+
+function expertCaseViewOpinions() {
+	if ($("#cases-holder .section-results .content .responses").length) {
+		expertCaseCheckAnswerHandleResponse($("#cases-holder .section-results .content").html());
+	} else {
+		expertCaseCheckAnswer();
+	}
+}
+
+function expertCaseCheckAnswer() {
+	$(".nextButton").hide();
+
+	console.log("Check EC answer triggered");
+
+	$(".page-navigation .next .button").hide();
+	var data_array = $(".questions input:checked, .questions input:hidden, .questions textarea, .questions input.text").serializeArray();
+	var data = $.param(data_array);
+
+	$.post(base_url + "json.php", data, function (resp, textStatus, XMLHttpRequest) {
+
+		console.log("Handing off to response handler for EC");
+		expertCaseCheckAnswerHandleResponse(resp);
+
+		pageNavigationNextButtonText(0);
+		setTimeout("checkHeight();", 1000);
+
+	});
+
+}
+
+function expertCaseCheckAnswerHandleResponse(resp) {
+
+	console.log("Handle response triggered");
+
+	$("#cases-holder").removeClass("unanswered");
+	$(".section-results").slideUp();
+	$(".section-question .opt").slideUp();
+	$(".section-question .page-navigation").remove();
+	$(".section-results > .content").html(resp);
+	$(".section-results").slideDown();
+	$(".user-status-info.user-unanswered").remove();
+
+	$("#cases-holder .section-results .has-tooltip,#cases-holder .section-results [data-toggle='tooltip']").tooltip({ placement: 'top', html: true, container: 'body' });
+
+	setTimeout("checkHeight(1);", 2500);
+}
+
+function colorBoxSetupTitle() {
+
+}
+
+function colorBoxSetup(init) {
+	//$("#cboxContent,#cboxWrapper,#colorbox,#cboxMiddleLeft,#cboxMiddleRight").animate({height: '+='+($("#cboxTitle").height()-5)});
+
+	$("#cboxTitle").wrapInner('<div class="inner" />');
+	$("#cboxSeriesList").remove();
+
+	var width = 40;
+
+	//colorbox resize for flourish
+	if (init == "flourish") {
+		const resizeObserver = new ResizeObserver(entries => {
+			$.colorbox.resize();
+		});
+		resizeObserver.observe(document.querySelector("#colorbox .flourish-embed"));
+	} else if (init == "pdf-api") {
+		let p = $("#colorbox .pdf-api-embed");
+		$.colorbox.resize({ height: "100%" })
+		documentsSetupPDFAPI(p);
+	} else if (init == "articulate") {
+		const title_h = $("#cboxTitle").height()+40;
+		$("#colorbox,#cboxWrapper,#cboxMiddleLeft,#cboxContent,#cboxMiddleRight").animate({height: "+="+title_h+"px"});
+		$("#cboxLoadedContent").height("+="+(title_h/2-16)+"px");
+		$("#colorbox").animate({top:"-="+(title_h/2)+"px"});
+	} else {
+		const w = $("#cboxLoadedContent").width();
+		const h = $("#cboxLoadedContent").height();
+		const available_height = $("#colorbox").height() - 60 - $("#cboxTitle").height();
+		const factor = available_height / h;
+		$(".cboxPhoto").animate({ height: h * factor + "px", width: w * factor + "px" }, 1);
+	}
+
+	//Resize colorbox if the calling functions have allow-scroll set to off
+	if ($.colorbox.element().parents("div.document").attr("data-doc-scroll") == 1) {
+		//$.colorbox.resize({height: ($(window).innerHeight()-40-$("#cboxTitle").height())+"px"});
+	}
+
+	if ($("#colorbox.series").length) {
+
+		$("#colorbox.series #cboxWrapper,#colorbox.series").animate({ height: '+=30' });
+		//What series are we on?
+		var series = 'image-' + $("#cboxContent").attr('class');
+		//Padding right value for title
+		//Look through the entire series
+		if ($("#cboxSeriesList").length == 0) {
+
+			console.info("Generating series: " + series);
+			$("#cboxContent").append('<div id="cboxSeriesList"></div>');
+			$(".documents a." + series).each(function (i) {
+				var title = $(this).attr('title');
+				var parts = title.split(" - ");
+				var item = $(this);
+				var series_weight = parts[0].replace("Figure ", "");
+				series_weight = series_weight.replace(" (Image Series)", "");
+				var first = '';
+				var className = '';
+				if (i == 0) {
+					first = String.fromCharCode(65 + i);
+					$("#cboxSeriesList strong").append(series_weight);
+				}
+				//See which image is open
+				if ($(this).attr('href') == $("#cboxLoadedContent img").attr('src')) {
+					$("#cboxSeriesList a").removeClass("active-trail");
+					className = " active-trail";
+				}
+				$("#cboxSeriesList").append('<a class="' + series + className + '" href="' + $(this).attr('href') + '" title="' + parts[1] + '">' + series_weight + '' + first + '</a>');
+			});
+
+			$("#cboxSeriesList a").click(function (e) {
+				e.preventDefault();
+				var index = $("#cboxSeriesList a").index(this);
+
+				$.colorbox.launch(index);
+			});
+
+			$("#cboxPrevious,#cboxNext,#cboxSeriesList").css("margin-top", "-" + $("#cboxTitle").height() + "px");
+		}
+	}
+
+	width = width + 40 * $("#cboxSeriesList a").length;
+	$("#cboxTitle .inner").css("padding-right", width + "px");
+
+	if ($("#cboxTitle .inner").children().length == 0) {
+		$("#cboxTitle").hide();
+		$("#colorbox").css("margin-top", 0);
+	}
+
+}
+
+/*
+ *	Allows a select element with ID to trigger an "ID"_specify div to appear
+ *		to provide an other value
+ *
+ */
+function otherSpecify(id, value) {
+	$("#" + id).change(function () {
+		toggleOtherSpecify(this, id, value);
+	}).change();
+}
+
+/**
+ * Checks to see if a selected value is qualifies other, and hides or shows the other specify field for that control
+ *
+ * Used as an event handler for a select on change event
+ *
+ * @param el the select element with a possible other value
+ * @param id the identifier for that element
+ * @param possibleOtherVals possible values that qualify as other (sometimes can be an array)
+ */
+function toggleOtherSpecify(el, id, possibleOtherVals) {
+	var selectedValue = $(el).val();
+	if (isOtherSelected(selectedValue, possibleOtherVals)) {
+		$("#" + id + "_specify").show();
+		$("#" + id + "_specify").trigger("specify:show");
+	} else {
+		$("#" + id + "_specify").find("input").val("");
+		$("#" + id + "_specify").hide();
+		$("#" + id + "_specify").trigger("specify:hide");
+	}
+}
+
+/**
+ * Determine if a selected value qualifies for an other specify field
+ * @param selectedValue the selected value in the element that contains the select with an other value
+ * @param possibleOtherVals possible values that qualify as other (sometimes can be an array)
+ * @returns {boolean}
+ */
+function isOtherSelected(selectedValue, possibleOtherVals) {
+	var match = false;
+	if (typeof possibleOtherVals == "object") {
+		if (possibleOtherVals.indexOf(selectedValue) >= 0) {
+			match = true;
+		}
+	} else {
+		if (selectedValue == possibleOtherVals) {
+			match = true;
+		}
+	}
+
+	return match;
+}
+
+function checkFields(fields) {
+	var error = 0;
+	var error_prev = 0;
+	var i = 0;
+
+	var failed = new Array();
+
+	//arrays
+	//field[x][0] = html ID of field
+	//field[x][1] = type of check 
+	//	nempty: field can not be empty
+	//	neptyucfirst: can not be empty, changes first letter to uppercase
+	// 	match: 0s element and 2nd element must match in value
+	//	checkedor: 0s, or 2nd,3rd,4th....infinity, one of those must be checked
+	//	email: 	checks that value has an @, a dot(.), in that order, 
+	//			and seperated by at least one other character
+	//field[x][2] = html ID of relational element (for match, etc)
+	for (key in fields) {
+		if (typeof (fields[key]) === 'undefined') {
+			continue;
+		}
+
+		var msg = "";
+		var skip = false;
+		//If this field has a previous error, don't keep checking it
+		if (failed.indexOf(fields[key][0]) != -1) {
+			console.log(fields[key][0] + " already has errors. skipping.");
+			error++;
+			continue;
+		}
+		switch (fields[key][1]) {
+			case "match": //has to match
+				if (getFieldParent($("#" + fields[key][0] + "")).hasClass("fail") == false) {
+					if ($("#" + fields[key][0] + "").val() != $("#" + fields[key][2] + "").val()) {
+						$("#" + fields[key][0] + "").parent().addClass("incorrect").removeClass("correct");
+						error++;
+						msg = "These two fields must match";
+						failed.push(fields[key][0]);
+					} else {
+
+						getFieldParent($("#" + fields[key][0] + ":visible")).removeClass("incorrect").addClass("correct");
+					}
+				} else {
+					skip = true;
+				}
+				break;
+			case "neptyucfirst": //Not Empty, Uppercase First
+				var value = $("#" + fields[key][0]).val();
+				$("#" + fields[key][0]).val(value.substr(0, 1).toUpperCase() + value.substr(1));
+			case "nempty":
+
+				//console.log($("#"+fields[key][0]+":visible").val());
+
+				if ((!$("#" + fields[key][0]).hasClass("input-group") && ($("#" + fields[key][0] + ":visible").val() == "" || ($("#" + fields[key][0] + "").attr("type") == "hidden" && $("#" + fields[key][0] + "").val() == ""))) || ($("#" + fields[key][0] + "").is("select") && $("#" + fields[key][0] + " option:selected").val() == "" || ($("#" + fields[key][0] + "").is("select") && !$("#" + fields[key][0]).val())) || ($("#" + fields[key][0]).hasClass("input-group") && $("input[type=text]", "#" + fields[key][0]).val() == "")) {
+					getFieldParent($("#" + fields[key][0] + "")).addClass("incorrect").removeClass("correct");
+					msg = "This field may not be empty";
+					error++;
+					failed.push(fields[key][0]);
+				} else {
+					getFieldParent($("#" + fields[key][0] + "")).removeClass("incorrect").addClass("correct");
+				}
+				break;
+			case "grecaptcha":
+
+				try {
+					if (grecaptcha.getResponse()==="") {
+						getFieldParent($("#" + fields[key][0] + "")).addClass("incorrect").removeClass("correct");
+						msg = "Please verify that you are a human";
+						error++;
+						failed.push(fields[key][0]);
+					} else {
+						getFieldParent($("#" + fields[key][0] + "")).removeClass("incorrect").addClass("correct");
+					}
+				} catch (e) {
+					bootbox.alert({
+						title: 'A fatal errors occurred',
+						message: 'We could not verify that you are human. Please try submitting again.',
+					});
+				}
+
+				break;
+			case "length": // string length
+				if ($("#" + fields[key][0] + ":visible").val().length !== fields[key][2]) {
+					getFieldParent($("#" + fields[key][0] + ":visible")).addClass("incorrect").removeClass("correct");
+					error++;
+					failed.push(fields[key][0]);
+					msg = "Value must have " + fields[key][2] + " characters";
+				} else {
+					getFieldParent($("#" + fields[key][0] + ":visible")).removeClass("incorrect").addClass("correct");
+				}
+
+				break;
+			case "isnumeric": // string length
+				if (isNaN($("#" + fields[key][0] + ":visible").val())) {
+					getFieldParent($("#" + fields[key][0] + ":visible")).addClass("incorrect").removeClass("correct");
+					error++;
+					failed.push(fields[key][0]);
+					msg = "Value must be numeric";
+				} else {
+					getFieldParent($("#" + fields[key][0] + ":visible")).removeClass("incorrect").addClass("correct");
+				}
+
+				break;
+			case "checkedor": //Whether one of the elements is checked
+				var locator = "#" + fields[key][0] + ":checked:visible";
+				for (var x = 2; x < fields[key].length; x++) {
+					locator += ", #" + fields[key][x] + ":checked:visible";
+				}
+				if ($("#" + fields[key][0] + ":visible").length > 0 && $(locator).length == 0) {
+					getFieldParent($("#" + fields[key][0] + ":visible")).addClass("incorrect").removeClass("correct");
+					error++;
+					failed.push(fields[key][0]);
+					msg = "One of these must be selected";
+				} else {
+					getFieldParent($("#" + fields[key][0] + ":visible")).removeClass("incorrect").addClass("correct");
+				}
+				break;
+			case "checked_limit": //Whether one of the elements is checked
+				var checked = $("input[name='" + fields[key][0] + "']:checked");
+				var $parent = getFieldParent($("input[name='" + fields[key][0] + "']:visible"));
+				if (checked.length > fields[key][2]) {
+					$parent.addClass("incorrect").removeClass("correct");
+					error++;
+					failed.push(fields[key][0]);
+					msg = "You can only select up to " + fields[key][2] + " items";
+				} else if (checked.length === 0) {
+					$parent.addClass("incorrect").removeClass("correct");
+					error++;
+					failed.push(fields[key][0]);
+					msg = "One of these must be selected";
+				} else {
+					$parent.removeClass("incorrect").addClass("correct");
+				};
+
+				$parent.find(".response").remove();
+				$parent.append('<span class="response">' + msg + '<span class="indicator fail" /></span>');
+				skip = true;
+				break;
+			case "password":
+				if ($("#" + fields[key][0] + ":visible").val() == "" || checkStrength($("#" + fields[key][0] + ":visible").val()) !== 0) {
+					getFieldParent($("#" + fields[key][0] + "")).addClass("incorrect").removeClass("correct");
+					msg = "Password requirements are not met";
+					error++;
+					failed.push(fields[key][0]);
+				} else {
+					getFieldParent($("#" + fields[key][0] + "")).removeClass("incorrect").addClass("correct");
+				}
+				break;
+			case "email": //Email Address
+				if (getFieldParent($("#" + fields[key][0] + "")).hasClass("fail") == false) {
+					var em = $("#" + fields[key][0] + "").val();
+					if (em) {
+						var at_i = em.indexOf("@");
+						var dot_i = em.lastIndexOf(".");
+
+						//@ is after 0, dot is after 0 and after @(with at least 1 char)
+						//dot is not last char
+						if (at_i > 0 && dot_i > 0 && (dot_i - 1) > at_i && (em.length - 1) > dot_i) {
+							getFieldParent($("#" + fields[key][0] + "")).removeClass("incorrect").addClass("correct");
+						} else {
+							getFieldParent($("#" + fields[key][0] + "")).addClass("incorrect").removeClass("correct");
+							getFieldParent($("#" + fields[key][0] + "")).find(".response").remove();
+							error++;
+							msg = "Invalid e-mail address";
+							failed.push(fields[key][0]);
+						}
+					} else {
+						//No email provided
+						getFieldParent($("#" + fields[key][0] + "")).addClass("incorrect").removeClass("correct");
+						getFieldParent($("#" + fields[key][0] + "")).find(".response").remove();
+						error++;
+						msg = "Please enter an e-mail address";
+						failed.push(fields[key][0]);
+					}
+				} else {
+					skip = true;
+				}
+				break;
+			case "zipcode":
+				var zipValue = $("#" + fields[key][0] + ":visible").val();
+				if (zipValue == "" || !(/(^\d{5}$)|(^\d{5}-\d{4}$)/.test(zipValue))) {
+					getFieldParent($("#" + fields[key][0] + ":visible")).addClass("incorrect").removeClass("correct");
+					error++;
+					failed.push(fields[key][0]);
+					msg = "Value must be a properly formed US ZIP Code, e.g. ##### or #####-####.";
+				} else {
+					getFieldParent($("#" + fields[key][0] + ":visible")).removeClass("incorrect").addClass("correct");
+				}
+				break;
+			case "zipcode_toggle":
+				const zipInput = $("#" + fields[key][0])
+				if (zipInput.val() == "" || !(/(^\d{5}$)|(^\d{5}-\d{4}$)/.test(zipInput.val()))) {
+					getFieldParent(zipInput).addClass("incorrect").removeClass("correct");
+					error++;
+					failed.push(fields[key][0]);
+					msg = "Value must be a properly formed US ZIP Code, e.g. ##### or #####-####.";
+				} else {
+					getFieldParent(zipInput).removeClass("incorrect").addClass("correct");
+				}
+				break;
+
+			default:
+				break;
+		}
+
+		if (skip == false) {
+			getFieldParent($("#" + fields[key][0] + "")).find(".response").remove();
+			getFieldParent($("#" + fields[key][0] + "")).append('<span class="response">' + msg + '<span class="indicator fail" /></span>');
+		}
+		error_prev = error;
+		i++;
+	}
+
+	//alert(error+" "+failed.length+" "+fields.length);
+
+	// some times fields[0][0] is not an id but a form field name with []
+	if (error || failed.length > 0) {
+		if (!fields[0][0].includes("[") && $("#" + fields[0][0]).length > 0) {
+			$("#" + fields[0][0]).parents("form").find(".options .section .response").remove();
+			$("#" + fields[0][0]).parents("form").find(".options .section").addClass("incorrect").removeClass("correct").prepend('<span class="response"><strong>Errors Detected!</strong> Please correct them before continuing</span>');
+		}
+		return false;
+	} else {
+		if (!fields[0][0].includes("[") && $("#" + fields[0][0]).length > 0) {
+			$("#" + fields[0][0]).parents("form").find(".options .section").addClass("correct").removeClass("incorrect");
+			$("#" + fields[0][0]).parents("form").find(".options .section .response").remove();
+		}
+	}
+
+	return true;
+}
+
+function markFieldIncorrect(fieldId, msg) {
+	const parent = getFieldParent($("#" + fieldId + ""));
+	parent.addClass("incorrect").removeClass("correct");
+	parent.find(".response").remove();
+	parent.append('<span class="response">' + msg + '<span class="indicator fail" /></span>');
+
+}
+
+function markFieldCorrect(fieldId) {
+	const parent = getFieldParent($("#" + fieldId + ""));
+	parent.removeClass("incorrect").addClass("correct");
+	parent.find(".response").remove();
+}
+
+function clearFieldErrors(fieldId) {
+	const parent = getFieldParent($("#" + fieldId + ""));
+	parent.removeClass("incorrect").removeClass("correct");
+	parent.find(".response").remove();
+}
+
+
+	/**
+ * Part of form validation
+ *
+ * When some fields have an accompanying "Other specify" field, this function
+ * ensure that the "Other specify" is a required field
+ *
+ * @param fields an array of strings for for the id's of the fields that have an Other Specify
+ * @param rules the array of field validation rules for a form
+ */
+function requireOtherSpecify(fields, rules) {
+	fields.forEach(function (field) {
+		var fieldIdentifier = field + "_specify";
+		$("#" + fieldIdentifier).on("specify:show", function (e) {
+			if (findValidationRuleIndex(fieldIdentifier, rules) === -1) {
+				var newRuleIndex = rules.length;
+				rules[newRuleIndex] = [fieldIdentifier, 'nempty', ''];
+				$("input[type=text]", this).on("blur", function (e) {
+					checkFields([rules[newRuleIndex]]);
+				});
+			}
+
+
+		})
+
+		$("#" + fieldIdentifier).on("specify:hide", function (e) {
+			var index = findValidationRuleIndex(fieldIdentifier, rules);
+			if (index !== -1) {
+				rules.splice(index, 1);
+				$("input[type=text]", this).off("blur");
+			}
+		})
+	});
+}
+
+/**
+ * Part of form validation
+ *
+ * Looks in an array of field validation rules for a field's id
+ *
+ * @param name id of the field
+ * @param rules the array of field validation rules for a form
+ * @returns {number} index of that field's rule
+ */
+function findValidationRuleIndex(name, rules) {
+	var isFound = -1;
+	rules.forEach(function (rule, index) {
+		if (rule[0] === name) {
+			isFound = index;
+		}
+	});
+
+	return isFound;
+}
+
+function getFieldParent($field) {
+	var $parent = $field.parent();
+	if ($parent.hasClass("input-group")) {
+		return $parent.parent();
+	}
+
+	return $parent;
+}
+
+/*
+ *	Displays a small loading indicator in the element
+ *		elem: the jQuery object of the element
+ *		show: a true/false value for whether or not to display
+ */
+function loadingIndicator(elem, show) {
+	if (show) {
+		if (elem.hasClass("loading-indicator")) {
+			//Don't do anything
+			console.log("Already displayed");
+			return;
+		} else {
+			console.log("Displaying");
+			elem.addClass("loading-indicator");
+		}
+	} else {
+		console.log("Hiding");
+		elem.removeClass("loading-indicator");
+	}
+}
+
+function plurality(num) {
+	if (num == 1) {
+		return '';
+	}
+	return 's';
+}
+
+function isNumeric(n) {
+	return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+if (!Array.indexOf) {
+	Array.prototype.indexOf = function (obj) {
+		for (var i = 0; i < this.length; i++) {
+			if (this[i] == obj) {
+				return i;
+			}
+		}
+		return -1;
+	}
+}
+
+//Checks strength of password
+//Returns 0 if all requirements are met;
+function checkStrength(password, result) {
+
+	var reqs = 3; //total number of requirements
+
+	//initial strength
+	var strength = 0;
+
+	if (typeof result != 'undefined') result.find(".bar").remove();
+
+	//if the password length is less than 6, return message.
+	if (password.length < 8) {
+		if (typeof result != 'undefined') result.removeClass().addClass('strength strength-' + strength);
+		$(".pw-requirement-length").removeClass("success");
+	} else {
+		strength += 1;
+	}
+
+	if (password.length > 32) {
+		reqs--;
+	}
+
+	//if length is 8 characters or more, increase strength value
+	if (password.length >= 8) {
+		strength += 1;
+		$(".pw-requirement-length").addClass("success");
+		reqs--;
+	} else {
+		$(".pw-requirement-length").removeClass("success");
+	}
+
+	//if password contains both lower and uppercase characters, increase strength value
+	if (password.match(/([a-z].*[A-Z])|([A-Z].*[a-z])/)) {
+		strength += 1;
+		reqs--;
+		$(".pw-requirement-case").addClass("success");
+	} else {
+		$(".pw-requirement-case").removeClass("success");
+	}
+
+	//if it has numbers and characters, increase strength value
+	if (password.match(/([a-zA-Z])/) && password.match(/([0-9])/)) {
+		strength += 1;
+		reqs--;
+		$(".pw-requirement-num").addClass("success");
+	} else {
+		$(".pw-requirement-num").removeClass("success");
+	}
+
+	//if it has one special character, increase strength value
+	if (password.match(/([!,%,&,@,#,$,^,*,?,_,~])/)) strength += 1;
+
+	if (typeof result != 'undefined') result.removeClass().addClass('strength strength-' + strength);
+
+	if (strength != 0) {
+		if (typeof result != 'undefined') result.prepend('<div class="bar bar-' + (strength) + '"></div>');
+	}
+
+	//Cap strength at 4 for passwords less than 24 char
+	if (password.length > 24) {
+		strength += 1;
+	} else if (password.length < 12) {
+		//Cap strength at 4
+		strength = Math.min(4, strength);
+	}
+
+	//Cap strength at 5
+	strength = Math.min(5, strength);
+
+	if (typeof result != 'undefined') {
+		switch (strength) {
+			case 1:
+				result.find(".inner").html('Weak');
+				break;
+			case 2:
+				result.find(".inner").html('Fair');
+				break;
+			case 3:
+				result.find(".inner").html('Good');
+				break;
+			case 4:
+				result.find(".inner").html('Very Good');
+				break;
+			case 5:
+				result.find(".inner").html('Excellent');
+				break;
+			default:
+				result.find(".inner").html('Too short');
+				break;
+		}
+	}
+	return reqs;
+
+}
+
+function openPopup(link, event) {
+	if (link.attr("target") != "_self" && !link.hasClass("no-popup")) {
+		event.preventDefault();
+		if (typeof (link.attr("onclick")) == "undefined") {
+			var newWin = window.open(link.attr('href'), 'window', 'status=1,toolbar=1,scrollbars=1,resizable=1');
+		}
+		return false;
+	} else {
+		return true;
+
+	}
+}
+
+function openRef(url) {
+	//Popup middle 455px,300px
+	var x = window.screen.availWidth / 2 - 455;
+	var y = window.screen.availHeight / 2 - 300;
+	var newWin = window.open(url, '', "status=0,toolbar=0,height=600,width=910,scrollbars=1,resizable=1");
+	if(newWin){
+		newWin.moveTo(x, y);
+	}
+	console.log("Opening popup");
+}
+
+function openFigure(num, link) {
+	$(".documents > .document.doc-" + num + " > .inner > a").click();
+	return false;
+}
+
+function openRegimenTable(num) {
+	$(".regimens-tables.regimens-tables-" + num + ".inline-table-copy .regimens > h3").click();
+	return false;
+}
+
+function openHTMLTable(num) {
+	$.colorbox({
+		onComplete: function () {
+			/*colorBoxSetup()*/
+			$("#colorbox").css("margin-top", "0px")
+			$("body").css("overflow", "hidden");
+			$("#colorbox").find('[data-toggle="tooltip"]').tooltip({ html: true });
+			$("#colorbox #cboxSeriesList").remove();
+		},
+		onCleanup: function () {
+			$("body").css("overflow", "auto");
+		},
+		html: $(".section-tables .html-table.html-table-" + num + "")[0].outerHTML,
+		maxHeight: "100%",
+		maxWidth: colorbox_max_width
+	});
+
+	return false;
+}
+
+function checkPopupBlocker(win) {
+
+	var failed = false;
+
+	try {
+		if (win == null
+			|| !win
+			|| win.closed
+			|| (typeof win.closed == 'undefined')
+			|| win.outerHeight == 0
+			|| win.outerWidth == 0
+			|| win.innerHeight == 0
+		) {
+			failed = true;
+		}
+	} catch (err) {
+		failed = true;
+	}
+
+	if (failed) {
+		console.log("Display popup blocked message");
+		//Stop All animations
+		$("html,body").stop();
+		setTimeout("popupblocker_message.modal('show');", 500);
+		return false;
+	}
+	console.log("Popup opened");
+	return true;
+}
+
+function toggleSpecify(id) {
+	return;
+}
+
+jQuery.expr[":"].Contains = function (obj, index, meta) {
+	return jQuery(obj).text().toUpperCase().indexOf(meta[3].toUpperCase()) >= 0;
+};
+
+jQuery.cachedScript = function (url, options) {
+
+	// Allow user to set any option except for dataType, cache, and url
+	options = $.extend(options || {}, {
+		dataType: "script",
+		cache: true,
+		url: url
+	});
+
+	// Use $.ajax() since it is more flexible than $.getScript
+	// Return the jqXHR object so we can chain callbacks
+	return jQuery.ajax(options);
+};
+
+function dbg(label, object) {
+	if (debug) {
+		if (object) {
+			console.log(label, object);
+		} else {
+			console.log(label);
+		}
+	}
+}
+
+const trackEvent = async (category, action, label) => {
+	if (Boolean(category) && Boolean(action)) {
+		let notes = 'generic-event'
+		const fields = {
+			hitType: 'event',
+			eventCategory: category,
+			eventAction: action,
+		}
+
+		if (label) {
+			if (typeof label === 'object' && label !== null && !Array.isArray(label)) {
+				notes = Object.keys(label).map(key => `${key}: ${label[key]}`).join(", ")
+			} else if (typeof label === 'string') {
+				notes = label.toLowerCase()
+			}
+			fields.eventLabel = notes
+		}
+		if (typeof ga !== "undefined") {
+			ga('send', fields)
+			fields.ga = true
+		} else {
+			dbg("Tracking: ", fields)
+			fields.dbg = true
+		}
+
+		if(typeof gtag !== "undefined") {
+			gtag('event', action, {
+				'event_category': category,
+				'event_label': notes
+			});
+			fields.gtag = true
+		}
+
+
+		const r = await $.ajax({
+			url: `${base_url}api/data-tools`,
+			method: "POST",
+			data: {
+				action: `${category}-${action}`.toLowerCase().replace(" ", "-"),
+				notes: notes.toLowerCase()
+			},
+			dataType: "json"
+		})
+	}
+}
+
+const toggleCheckOnLearning = (a) => {
+	$(`.question-${a}`).find('.question-check-on-learning-toggle').siblings('.question-data-content').slideToggle()
+}
+
+//https://github.com/rajatsehgal/add-to-home-screen/blob/gh-pages/AddToHomeScreen.js
+
+const iOSShareBase64 = 'iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAAsxJREFUSA2lVjFrFFEQnnm7l2iiF2LuEggWImchFjb5B4KFhZ3+AC1io1hZJedyYGNjERANaB9FG0FBBGuLIBamukYQRXN4GnKSy+6+cebt283buz3dmIF3O2/ezHwz82ZnD+BfdIm8VKW+vLsmK92Dc5bJ9sUEpFL9+nL4bPYOkSzhUzk4OpnMYdDh86wYBqjFQU1HrxGoDoA9qzRBAJ2O8s+nOuaZ92B2xQBECIh0JqCxbzp6yUpnp7r+8a1j8WMADdUfn678mj7xmUE+zCn/wscAd8HaDGJkJRg8kH0XvvqI8A6VPtdewT6LjrCfo+2VU32RyVkXwC+yHSHjyCUSWQW1rTej57KGjEU3tQO2dchBlwMk2DvmCpQkc1eurvXFogTgCbfiZYxrSzsXUal7DBQDmPaMEPiOgR51WpVbLMsCqjXDuwrwKoHuAChuZdJiQ6Budlr4AqzPxOANyF3EgF6DL/ckkb7GNpMQx2I0gYjvJT5OjvcJcRe8JaKfnOZv8FCB1j1E7wEQNIyG9ZkAzLNYCBUh6Y3N1thDsx/4YaUMYLPlv+JjWRnNNsMbnEGytz6zlFMtjuqw4blF4UsC3BgHJV1Ezg01rtN4u28B5zk5blVju3eHxk0egDRnbrO5DaG8C6LVDpLac6mSTEU2wyUNMDJeTNcxJ7biw6E8gHNQxHKEOeMiHSmzK98XACobsethkD9gBtOD/ob2/5mB6R6llPsWZx01BOIIypXITtXvAd43tumkdRyNYssBiLWApB+YQN70clQeQPw9Le84hf/ruE6VDvLMZ2A6wLbx4rrPA6vURcLiugQa8tAbiiUPwOORh1ZS39WFEFaH9EcJEhsSW/4MOZQDQB2LQnVmiU77GFYjz44Nx6CI9XkOR1TZ4t8qT4sEzCrmAFi2rSb9OdyBDVIVyP6vFHl1ZPLl8LiYeMgH3Qu3nSP4A9EHFXrGnVaNAAAAAElFTkSuQmCC';
+const closeBase64 = 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAQAAADZc7J/AAAAl0lEQVR4Ae2TMQ6DMBTFfA+kHqkSUmcKgd5/BIaEqsOfWqyILgx4jewl/3FxSm74q8ODlcQeL1Za769sFNKOXthYaBAS5Wci9ExH4AlG143xKxH6k0oiMbluTEQi9B5BEpW6fNtHH+CfQCEd13PcxVF9IHnC9V6us1qvTsjVScJ1SeicM53MbKZBaFlkcYmZO473aTghF2/X9XbQ39L36gAAAABJRU5ErkJggg=='
+
+const template = document.createElement('template');
+template.innerHTML = `
+<style>
+:host {
+  display: none;
+  position: fixed;
+  z-index: auto;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #333;
+  
+  border-radius: 20px;
+  box-shadow: 0 0 40px -10px;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+#install {
+  height: 100px;
+  padding: 10px;
+  background: #F5F5F4;
+  width: 280px;
+  border: 1px solid #333;
+  line-height: 30px;
+  border-radius: 20px;
+}
+
+#share {
+  vertical-align: top;
+}
+
+#arrowOuter {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 20px solid #333;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#arrowInner {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-top: 20px solid #F5F5F4;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -19px;
+}
+
+#close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  padding: 5px;
+  cursor: pointer;
+}
+</style>
+<div id="install">
+  Install this web app on your iPhone for the best experience. It's easy, just tap
+  <img id="share" src="data:image/png;base64,${iOSShareBase64}"> and then "Add to Home Screen".
+</div>
+<div id="arrowOuter"></div>
+<div id="arrowInner"></div>
+<img id="close" src="data:image/png;base64,${closeBase64}">
+`;
+
+class AddToHomeScreen extends HTMLElement {
+	constructor() {
+		super();
+		this.attachShadow({mode: 'open'});
+		this.shadowRoot.appendChild(template.content.cloneNode(true));
+		this._closeClick = closeClick.bind(this);
+	}
+
+	connectedCallback() {
+		const ua = window.navigator.userAgent;
+		const iOS = !!ua.match(/iPad/i) || !!ua.match(/iPhone/i);
+		const webkit = !!ua.match(/WebKit/i);
+		const iOSSafari = iOS && webkit && !ua.match(/CriOS/i);
+
+		if (iOSSafari && !navigator.standalone) {
+			this.style.display = 'inline-block';
+			this.shadowRoot.getElementById('close').addEventListener('click', this._closeClick);
+		}
+	}
+
+	disconnectedCallback() {
+		this.shadowRoot.getElementById('close').removeEventListener('click', this._closeClick);
+	}
+}
+
+function closeClick() {
+	this.style.display = 'none';
+}
+
+window.customElements.define('add-to-home-screen', AddToHomeScreen);
+
+const flourishEmbedBackground = () => {
+	$(".flourish-embed").ready(function () {
+		document.querySelectorAll('.flourish-embed').forEach(el => {
+			const elInnerHTML = el.innerHTML
+			const div = document.createElement('div')
+			div.classList.add('flourish-embed-iframe-container')
+			div.innerHTML = elInnerHTML
+			el.innerHTML = ""
+			el.appendChild(div)
+		})
+	})
+}
+$(document).ready(function () {
+	flourishEmbedBackground()
+
+	$(".page-scroll").on("click", (e) => {
+		e.preventDefault()
+		const a = e.currentTarget.href.split("#")[1]
+		var element = document.getElementById(a);
+		var headerOffset = 90;
+		var elementPosition = element.getBoundingClientRect().top;
+		var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+		window.scrollTo({
+			top: offsetPosition,
+			behavior: "smooth"
+		});
+		history.pushState({}, '', `#${a}`)
+	})
+})
+
+/*******************************************************************
+*
+*	Andrew Karpenko
+*	206-221-4564
+*	akarpy@u.washington.edu	
+*
+********************************************************************/
+
+$(document).ready(function(){
+	
+	centerOptions("body");
+
+	//add the question # to each check on learning question
+	$("#page-content .core-concept-subsection .level4s-full-text .question.question-check-on-learning").each(function(index){
+		$(this).attr("data-weight",index+1);
+		$(this).find(".question-title").text($(this).find(".question-title").text()+" "+(index+1));
+		$($(this).attr("id")+"-full").attr("data-weight",index+1);
+	});
+
+	if($("body.touch.mobile").length){
+		//For touch screens we will allow a submit button
+		$("#page-content").on("mouseup",".question.question-check-on-learning .fieldset.unanswered .opt.selected",function(){
+			colCheckAnswer($(this).parents(".fieldset").children("input").val(),$(this).parents(".question"));
+		});
+	}else{
+		//For desktops selecting a choice is final
+		$("#page-content").on("change",".question.question-check-on-learning .opt input",function(){
+			if($(this).parents(".fieldset").find(".opt.selected").length){
+				//Some selected, submit
+				colCheckAnswer($(this).parents(".fieldset").children("input").val(),$(this).parents(".question"));
+			}
+		});
+	}
+
+	$(".submit-options .submit-option input").unbind("change").change(function(i){
+		$(".submit-options .submit-option input:radio:not(:checked)").parent().removeClass("selected");
+		if($(this).prop("checked")){
+			$(this).parent().addClass("selected");
+		}else{
+			$(this).parent().removeClass("selected");
+		}
+	}).change();
+});
+
+
+function centerOptions(parent){
+	$(parent).find(".opt input:text, .opt input:password").addClass("text");
+	$(parent).find(".opt input:checkbox, .opt input:radio").addClass("multi");
+	
+// 	$(parent).find(".opt input.multi").each(function(i){
+// 		if($(this).parent().height()>20){
+// 			var margin = $(this).parent().height()/2-$(this).height()/2-2;
+// 			$(this).css("margin-bottom",margin);
+// 			$(this).css("margin-top",margin);
+// 		}
+// 	});
+	
+	$(parent).find(".opt input").unbind("change").change(function(i){
+		$(".opt input:radio:not(:checked)").parent().removeClass("selected");
+		if($(this).prop("checked")){
+			$(this).parent().addClass("selected");
+		}else{
+			$(this).parent().removeClass("selected");
+		}
+	}).change();
+	
+	$(parent).find(".fieldset .opt").unbind("click").click(function(e){
+     	
+    	if($(this).find("input").prop('checked')){
+    		$(this).find("input").prop('checked',false).change();
+    	}else{
+    		$(this).find("input").prop('checked',true).change();
+    	}
+
+    }).keypress(function(e){
+    	if(e.which == 13){
+    		$(this).click();
+    	}
+    });
+    
+    $(parent).find(".fieldset .opt label,.fieldset .opt input").click(function(e){
+    	e.stopPropagation();
+    });
+}
+/*******************************************************************
+*
+*	Andrew Karpenko
+*	206-221-4564
+*	akarpy@u.washington.edu	
+*
+********************************************************************/
+
+//Move documents into main body for full screen viewing
+function documentsFullScreen(selector){
+	console.log("moving documents inline for "+selector);
+	
+	$(selector).each(function(){
+		if($(this).hasClass("style-link-only")){
+			return true;
+		}
+		
+		var classes = $(this).attr("class");
+		var s = classes.indexOf("linked-doc-");
+		var e = classes.indexOf(" ",s);
+		if(e===-1){
+			e = classes.length;
+		}
+		classes = classes.substring(s,e);
+		classes = classes.replace("linked-","");
+
+		var original_doc = $(".section-figures div.document."+classes+"");
+		var doc = original_doc.clone().addClass("doc-inline");
+		doc[0].className = doc[0].className.replace(/\(Image\ Series\)\ ?/,'');
+		if($(this).closest("p,div,li,h4,h3").children("div.item-context-float").length>0 && $(this).hasClass("has-link-relation")===false){
+			doc.insertAfter($(this).closest("p,div,li,h4,h3").children("div.item-context-float").last());
+		}else{
+			if($(this).hasClass("link-relation-below")) {
+				if($(this).parents("h2,h3,h4").length>0){
+					//this is inside a heading, insert right after
+					doc.addClass("link-in-heading");
+					doc.insertAfter($(this).parents("h2,h3,h4"));
+				}else{
+					doc.appendTo($(this).closest("p,div,li"));
+				}
+			}else if($(this).hasClass("link-relation-bottom")){
+				let next_title = $(this).parent("p,ul,ol,h3,h4").nextAll("h3,h4");
+				if(next_title.length>0){
+					doc.insertBefore(next_title.first());
+				}else{
+					//There is no more titles in this section. append to core concept
+					let append_target = $(this).closest("div.section-content,div.summary")
+					doc.appendTo(append_target);
+				}
+			}else if($(this).hasClass("link-relation-top")){
+				//If this is not the first item that we put at the top, then we need to add it after the previous
+				doc.addClass("link-relation-top");
+				const section = $(this).closest("div.section-content,div.summary");
+				if(section.find("div.document.link-relation-top.doc-inline").length){
+					doc.insertAfter(section.find("div.document.link-relation-top.doc-inline").last());
+				}else{
+					doc.prependTo(section);
+				}
+			}else{
+				if($(this).parents("h2,h3,h4").length>0){
+					//this is inside a heading, insert right after
+					doc.addClass("link-in-heading");
+					doc.insertBefore($(this).parents("h2,h3,h4"));
+				}else{
+					doc.prependTo($(this).closest("p,div,li"));
+				}
+			}
+		}
+		
+		doc.addClass("item-context-float");
+
+		let shadowbox = false;
+		let pdf_api_enable = false;
+		let full_width = false;
+		const original_doc_style = $(this)[0].className.match(/(style-\S+)/)[0];
+
+		if($(this).hasClass("style-full")){
+			doc.addClass("style-full");
+			doc.find(".field-name").prependTo(doc.find("a.image"));
+			pdf_api_enable = true;
+			full_width = true;
+		}else if($(this).hasClass("style-full-nc")){
+			doc.addClass("style-full-nc");
+			doc.find(".field-name").prependTo(doc.find("a.image"));
+			pdf_api_enable = true;
+			full_width = true;
+		}else if($(this).hasClass("style-inline")){
+			doc.addClass("style-inline");
+			shadowbox = true;
+		}else if($(this).hasClass("style-thumb")){
+			doc.addClass("style-thumb");
+			shadowbox = true;
+		}else if($(this).hasClass("style-half")){
+			doc.addClass("style-half");
+			shadowbox = true;
+		}else if($(this).hasClass("style-half-flipped")){
+			doc.addClass("style-half-flipped");
+			shadowbox = true;
+		}else if($(this).hasClass("style-text-width")){
+			doc.addClass("style-text-width");
+			pdf_api_enable = true;
+			full_width = true;
+		}else if($(this).hasClass("style-text-width-nc")){
+			doc.addClass("style-text-width-nc");
+			pdf_api_enable = true;
+			full_width = true;
+		}else if($(this).hasClass("style-text-width-split")){
+			doc.addClass("style-text-width-split");
+			doc.find(".field-name").prependTo(doc.find("a.image"));
+			pdf_api_enable = true;
+			full_width = true;
+		}else if($(this).hasClass("style-text-width-below")){
+			doc.addClass("style-text-width-below");
+			pdf_api_enable = true;
+			full_width = true;
+		}else if($(this).hasClass("style-third")){
+			doc.addClass("style-third");
+			shadowbox = true;
+		}else if($(this).hasClass("style-third-nc")){
+			doc.addClass("style-third-nc");
+			shadowbox = true;
+		}else{
+			doc.addClass("style-third");
+			shadowbox = true;
+		}
+		
+		if($(this).hasClass("document-series")) {
+
+			doc.addClass("doc-image-series");
+			var rel = doc.find("a").attr("rel");
+
+			if (shadowbox) {
+				doc.find("a").attr("onclick", $(this).attr("onclick"));
+				doc.find("a").attr("rel", "");
+				doc.find("a").attr("class", "");
+			}
+
+			//For mobile viewing we need to copy the series inline
+			if ($("body").hasClass("mobile") || full_width) {
+
+				console.log("running full width document series");
+				console.log(doc);
+
+				var doc_id = "doc-series-" + rel.replace("image-series-", "");
+
+				//Move doc title into right place
+				doc.find(".field-name").clone().insertAfter($(doc).find("a .field-name"));
+				var new_figure_text = doc.find("a").attr("title");
+				new_figure_text = new_figure_text.replace(" (Image Series) -", "A.");
+				doc.find(".field-name:eq(1)").html('<span class="long">' + new_figure_text + '</span>');
+
+				doc.wrap('<div class="inline-doc-series inline-' + doc_id + '"></div>');
+				doc.wrap('<div class="series-height-limiter"></div>');
+				doc.wrap('<div class="inner-holder"></div>');
+				$(".documents ." + doc_id + " .document").clone().addClass("doc-inline").addClass(original_doc_style).appendTo(doc.parent());
+
+				if($(this).hasClass("style-text-width-split")) {
+					//Move all individual field-names to above their image
+					$(".inline-doc-series.inline-"+doc_id+" .inner-holder").find(".doc-inline").each(function(){
+						$(this).find(".field.field-name").prependTo($(this).find("a"));
+					});
+				}
+
+				if($("body").hasClass("mobile")){
+					const docum = $(".inline-" + doc_id + " .document");
+					docum.width($(window).width() - 24);
+					$(".inline-" + doc_id).width($(window).width() - 12);
+					var count = docum.length;
+					$(".inline-" + doc_id + " .inner-holder").width((count * 100 + count + 1) + "%");
+				}else{
+
+					$(".inline-doc-series.inline-"+doc_id).addClass(original_doc_style);
+
+					//Create header at the top
+					$(".inline-doc-series.inline-"+doc_id).prepend('<div class="header"></div>');
+
+					//Add navigation at top
+					$(".inline-doc-series.inline-"+doc_id+" .header").prepend('<nav aria-label="image series navigation"><ul class="pagination"></ul></nav>');
+					$(".inline-doc-series.inline-"+doc_id+" .inner-holder").find(".doc-inline").each(function(index){
+						const is_weight = String.fromCharCode(65+index);
+						$(".inline-doc-series.inline-"+doc_id+" .header nav ul").append('<li><a class="'+(index==0?"active":"")+'" href="javascript:void(0)" data-scroll-to="'+index+'">'+doc.attr('data-doc-weight')+is_weight+'</a></li>');
+					});
+
+					$(".inline-doc-series.inline-"+doc_id+" nav ul a").click(function(){
+						$(this).parent().siblings().find("a").removeClass("active");
+						$(this).addClass("active");
+						$(".inline-doc-series.inline-"+doc_id+" .inner-holder").scrollLeft($(this).attr('data-scroll-to')*$(".inline-doc-series.inline-"+doc_id+" .inner-holder").width());
+					});
+
+					//Remove click functionality from all full screen sizes
+					$(".inline-doc-series.inline-"+doc_id+" .inner-holder .doc-inline a").on("click",function(e){
+						if($(this).parents(".doc-inline").hasClass("graphic-content")){
+							$(this).parents(".doc-inline").toggleClass("graphic-content-bypass");
+						}
+						e.preventDefault();
+						return false;
+					}).removeClass("cboxElement");
+
+					//Move doc title to top
+					doc.find(".field-name:eq(0)").insertBefore($(".inline-doc-series.inline-"+doc_id+" nav"));
+
+					$(".inline-doc-series.inline-"+doc_id+" .header .field-name .short").text($(".inline-doc-series.inline-"+doc_id+" .header .field-name .short").text().replace(" (Image Series)",""));
+
+				}
+
+
+				//Add an observer to keep track of height of the elements
+				const options = { root: document.querySelector(".inline-doc-series.inline-"+doc_id+" .inner-holder"), rootMargin: "0px", threshold: 0.9 };
+				const docSeriesObserverCallback = (entries, observer) => {
+					entries.forEach((entry, i) => {
+						if (entry.isIntersecting) {
+							//Set nav active to current element
+							const index = Array.prototype.indexOf.call(entry.target.parentNode.children, entry.target);
+							$(entry.target).parents(".inline-doc-series").find(".header nav a").removeClass("active");
+							$(entry.target).parents(".inline-doc-series").find(".header nav li:eq("+index+") a").addClass("active");
+							$(entry.target).siblings().removeClass("active");
+							$(entry.target).addClass("active");
+						}
+					});
+				}
+				let docSeriesObserver = new IntersectionObserver(docSeriesObserverCallback,options);
+				document.querySelectorAll(".inline-doc-series.inline-"+doc_id+" .inner-holder .doc-inline").forEach((element) => {
+					docSeriesObserver.observe(element);
+				});
+
+				//$(".inline-doc-series.inline-"+doc_id).css("--holder-default-height",$(".inline-doc-series.inline-"+doc_id+" .inner-holder .doc-inline").first().height()+"px");
+			}
+		}
+
+		//Disable click for figures that take up a large proportion of the screen
+		//Enable shadowbox for thumbnails
+		if(shadowbox){
+			$(this).click(function(){
+				console.log("Opening through figures on bottom");
+				return openFigure($(this).attr("data-doc-weight"));
+			});
+			$(doc).click(function(){
+				return openFigure($(doc).attr("data-doc-weight"));
+			});
+		}else{
+			doc.addClass("no-shadowbox");
+			$(this).click(function(){
+				//Highlighted image
+				$(doc).addClass("highlighted");
+				setTimeout(function(){
+					$(doc).removeClass("highlighted")
+				},3000);
+				return false;
+			});
+		}
+
+		if(doc.hasClass("pdf-api")) {
+			let p = doc.find(".pdf-api-embed");
+			//	Need to add content to the ID variable for proper function (this will only change the ID
+			//		of the document at the bottom of the page in the figures section)
+			doc.find(".pdf-api-embed").attr("data-divid",doc.find(".pdf-api-embed").attr("data-divid")+"-inline");
+			if (pdf_api_enable) {
+				//This will render the PDF right now using the API
+				document.addEventListener("adobe_dc_view_sdk.ready", function() {
+					documentsSetupPDFAPI(p);
+				});
+			} else {
+				//This will wait until the document is clicked on to open the PDF
+				//doc.removeClass("pdf-api");
+			}
+		}
+
+		if(doc.hasClass("articulate")){
+			let p = doc.find(".articulate-embed");
+			let embed_container = $('<div class="articulate-embed-iframe-container"></div>');
+			let embed_iframe = $('<iframe id="articulate-embed-'+doc.attr('data-doc-id')+'" src="'+p.attr('data-src')+'" scrolling="no" frameborder="0" title="Interactive or visual content"></iframe>');
+			embed_iframe.appendTo(embed_container);
+			embed_container.appendTo(p);
+
+			// const new_h = embed_container.width() * (doc.attr('data-doc-info-height')/doc.attr('data-doc-info-width'));
+			// embed_container.height(Math.ceil(new_h));
+
+			const resizeObserver = new ResizeObserver(entries => {
+				const parent_doc = $(entries[0].target).parents(".document");
+				const new_h = entries[0].contentRect.width * (parent_doc.attr('data-doc-info-height')/parent_doc.attr('data-doc-info-width'));
+				$(entries[0].target).find(".articulate-embed-iframe-container").height(Math.ceil(new_h));
+			});
+			resizeObserver.observe(p[0]);
+		}
+
+	});
+}
+
+
+
+function animationsFullScreen(selector){
+	console.log("moving animations inline for "+selector);
+
+	$(selector).each(function(){
+		if($(this).hasClass("style-link-only")){
+			return true;
+		}
+
+		var anim = createInlineAnimation($(this));
+		var $linkParent = $(this).parent();
+		if($linkParent.is("h3")) {
+			var sibs = getNextSiblings($linkParent);
+			var animGrid = $("<div>").addClass("anim-inline-grid");
+			var animTitleRow = $("<div>").addClass("anim-inline-grid-row-title");
+			var animContentRow = $("<div>").addClass("anim-inline-grid-row-content");
+			var animGridContent = $("<div>").addClass("anim-inline-grid-content");
+			var animGridAnim = $("<div>").addClass("anim-inline-grid-anim animationToggle");
+			animGridAnim.attr("data-title", $("a", anim).attr("title"));
+			animGrid.append(animTitleRow);
+			animGrid.append(animContentRow);
+			animContentRow.append(animGridContent);
+			animContentRow.append(animGridAnim);
+			animGrid.insertBefore($linkParent);
+			sibs.forEach(function(el){
+				if(el.is("h3")) {
+					animTitleRow.append(el);
+				} else {
+					animGridContent.append(el);
+				}
+			});
+			animGridAnim.append(anim);
+		} else if($linkParent.is("strong")){
+			var $listItem = $linkParent.parent();
+			$listItem.addClass("anim-inline-grid");
+			$listItem
+				.contents()
+				.wrapAll($("<div>").addClass("anim-inline-grid-content"));
+			var $animGridAnim = $("<div>").addClass("anim-inline-grid-anim animationToggle");
+			$animGridAnim.attr("data-title", $("a", anim).attr("title"));
+			$animGridAnim.append(anim);
+			$listItem.append($animGridAnim);
+			$listItem.contents().wrapAll($("<div>").addClass("anim-inline-grid-row-content"));
+		} else {
+			if($(this).closest("p,div,li").children("div.item-context-float").length>0){
+				anim.insertAfter($(this).closest("p,div,li").children("div.item-context-float").last());
+			} else {
+				anim.prependTo($(this).closest("p,div,li"));
+			}
+
+			anim.addClass("item-context-float");
+		}
+	});
+}
+
+function documentsSetupPDFAPI(p){
+	p.attr("id",p.attr("data-divid"));
+	//document.addEventListener("adobe_dc_view_sdk.ready", function(){
+		var adobeDCView = new AdobeDC.View({clientId: p.attr("data-clientid"), divId: p.attr("data-divid"), backgroundColor: "#ffffff"});
+		adobeDCView.previewFile({
+			content: {location: {url: p.attr("data-pdf-location")}},
+			metaData: {fileName: p.attr("data-filename")}
+		}, {embedMode: "SIZED_CONTAINER", showPageControls: true, dockPageControls: false, showZoomControl: true});
+	//});
+}
+
+function createInlineAnimation($animLink){
+	var classes = $animLink.attr("class");
+	var s = classes.indexOf("linked-anim-");
+	var e = classes.indexOf(" ",s);
+	if(e===-1){
+		e = classes.length;
+	}
+	classes = classes.substring(s,e);
+	classes = classes.replace("linked-","");
+
+	var anim = $(".section-animations div.animation."+classes+"").clone().addClass("anim-inline");
+
+	if($animLink.hasClass("style-full")){
+		anim.addClass("style-full");
+	}else if($animLink.hasClass("style-inline")){
+		anim.addClass("style-inline");
+	}else if($animLink.hasClass("style-thumb")){
+		anim.addClass("style-thumb");
+	}else if($animLink.hasClass("style-half")){
+		anim.addClass("style-half");
+	}else if($animLink.hasClass("style-text-width")){
+		anim.addClass("style-text-width");
+	}else if($animLink.hasClass("style-third")){
+		anim.addClass("style-third");
+	}else if($animLink.hasClass("style-third-nc")){
+		anim.addClass("style-third-nc");
+	}else{
+		anim.addClass("style-third");
+	}
+
+	return anim;
+}
+
+function getNextSiblings($el) {
+	var siblings = [];
+	var $curr = $el;
+	do {
+		siblings.push($curr);
+		$curr = $curr.next();
+	} while(!$curr.is("h3"))
+
+	return siblings;
+}
+/**
+ * Card Collection Scroller
+ *
+ * A collection of panels or cards that side scroll much like on netflix
+ */
+(function($){
+    function init() {
+
+        document.querySelectorAll(".card-collection-scroller-scrollbutton").forEach((el) => {
+            const containerEl = el.parentElement;
+            const scrollerEl = containerEl.querySelector(".card-collection-scroller-scroller");
+            const contentWidth = document.querySelector("#content").offsetWidth;
+            const scrollWidth = scrollerEl.scrollWidth;
+            let destination = 0;
+            let isScrolling = false;
+            const maxScrollLeft = scrollWidth - contentWidth;
+
+            if(scrollWidth > contentWidth) {
+                el.addEventListener("click", function(ev){
+                    console.log("Clicking");
+                    if(ev.target.dataset.direction == 1) {
+                        if(scrollerEl.scrollLeft === 0 || scrollerEl.scrollLeft < maxScrollLeft){
+                            destination = (scrollWidth - (scrollerEl.scrollLeft + contentWidth) >= contentWidth ? scrollerEl.scrollLeft + contentWidth : scrollWidth - (scrollerEl.scrollLeft + contentWidth));
+                            doScroll(destination);
+                        }
+                    } else {
+                        if(scrollerEl.scrollLeft !== 0) {
+                            destination = (scrollerEl.scrollLeft - contentWidth < 0 ? 0 : scrollerEl.scrollLeft - contentWidth);
+                            doScroll(destination);
+                        }
+                    }
+                });
+
+                function doScroll(destination) {
+                    if(!isScrolling) {
+                        console.log("scrolling to ", destination);
+                        isScrolling = true;
+
+                        containerEl.style.marginLeft = "0";
+
+                        scrollerEl.scrollTo({
+                            left: destination,
+                            top: 0,
+                            behavior: 'smooth'
+                        })
+                    }
+                }
+
+                scrollerEl.addEventListener("scroll", handleScroll);
+
+                function handleScroll(ev) {
+                    console.log("scrolling...", scrollerEl.scrollLeft);
+
+                    if(scrollerEl.scrollLeft === destination) {
+                        console.log("Done");
+                        isScrolling = false;
+
+                        containerEl.classList.remove("card-collection-scroller-position-100");
+                        containerEl.classList.remove("card-collection-scroller-position-0");
+
+                        if(scrollerEl.scrollLeft === 0) {
+                            containerEl.classList.add("card-collection-scroller-position-0");
+                        } else if (scrollerEl.scrollLeft === maxScrollLeft) {
+                            containerEl.classList.add("card-collection-scroller-position-100");
+                        }
+                    }
+                }
+
+                function handleWheel(ev) {
+                    ev.preventDefault();
+                    if(ev.wheelDeltaY != 0) {
+
+                    }
+                }
+
+                scrollerEl.addEventListener("wheel", handleWheel);
+            } else {
+                el.remove();
+            }
+
+
+
+            // scrollerEl.addEventListener('scroll', (e) => {
+            //     lastKnownScrollPosition = scrollerEl.scrollLeft;
+            //     console.log("ticking? ", ticking ? "yeah" : "nah");
+            //     if (!ticking) {
+            //         window.requestAnimationFrame(() => {
+            //             doSomething(lastKnownScrollPosition);
+            //             ticking = false;
+            //         });
+            //
+            //         ticking = true;
+            //     }
+            // });
+        });
+    }
+
+
+    $(document).ready(function(){
+        init();
+    });
+})(jQuery);
