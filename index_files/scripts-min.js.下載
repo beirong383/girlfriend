@@ -1,3 +1,5 @@
+
+
 /*******************************************************************
 *
 *	Hepatitis C Online
@@ -1651,7 +1653,7 @@ function sharePage() {
 	$("#shareme").html('');
 	$('#shareme').sharrre({
 		share: {
-			facebook: true,
+			facebook: false,
 			linkedin: true,
 			twitter: true,
 		},
@@ -5296,3 +5298,4 @@ function getNextSiblings($el) {
         init();
     });
 })(jQuery);
+
