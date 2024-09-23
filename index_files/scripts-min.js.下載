@@ -1651,7 +1651,7 @@ function sharePage() {
 	$("#shareme").html('');
 	$('#shareme').sharrre({
 		share: {
-			facebook: false,
+			facebook: true,
 			linkedin: true,
 			twitter: true,
 		},
