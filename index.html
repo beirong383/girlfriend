@@ -8203,12 +8203,12 @@
 
 										<div class="tool-container container-input container-8 row">
 											<div class="col-xs-12 col-sm-6">
-												<h3><strong>IQ (不知道者請輸入100)</strong></h3>
+												<h3>IQ (不知道者請輸入100)</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div style="display: flex; align-items: center;">
-													<input type="number" name="age" id="age_input_1" class="tool-input" min="80" max="145" step="1" value="100" placeholder="Enter IQ">
-													<span class="points" style="margin-left: 10px;">+0</span>
+													<input type="number" name="age" id="age_input_1" class="tool-input" min="55" max="145" step="1" value="100" placeholder="Enter IQ">
+													<span class="points" style="margin-left: 10px;" id="IQpoints">+0</span>
 
 												</div>
 												<span id="warning_icon_1" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
@@ -8685,21 +8685,19 @@
 											</div>
 										</div>
 
-										<div class="tool-container container-input container-3 row">
+										<div class="tool-container container-input container-8 row">
 											<div class="col-xs-12 col-sm-6">
-												<h3>身高>160公分，每多一公分加6分</h3>
+												<h3>身高 (公分)</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_44" value="0" id="trait_height_over160_n" class="tool-input">
-													<label for="trait_height_over160_n">No</label>
+												<div style="display: flex; align-items: center;">
+													<input type="number" name="age" id="age_input_2" class="tool-input" min="1" max="245" step="1" value="" placeholder="Enter 身高">
+													<span class="points" style="margin-left: 10px;" id="height_points">+0</span>
+
 												</div>
-											</div>
-											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_44" value="0" id="trait_height_over160_y" class="tool-input">
-													<label for="trait_height_over160_y">Yes<span class="points">+6 per cm</span></label>
-												</div>
+												<span id="warning_icon_2" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
+												<span id="warning_message_2" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是152到180，請檢查您的輸入是否正確。若確定正確請忽略此警告。</span>
+
 											</div>
 										</div>
 
@@ -10108,7 +10106,7 @@
             const IQValue = this.value;
             const warningMessage = document.getElementById('warning_message_1');
             const warningIcon = document.getElementById('warning_icon_1');
-            const pointsElement = document.querySelector('.points');
+            const pointsElement = document.getElementById('IQpoints');
 
             if (IQValue >= 80 && IQValue <= 145) {
                 console.log('Age is within the valid range.');
@@ -10124,7 +10122,8 @@
 
 			if (IQValue > 130) {
 				console.log("IQcalculatedValue = " + IQcalculatedValue);
-				IQcalculatedValue = (IQvalue - 130) * 8;
+				IQcalculatedValue = (IQValue - 130) * 8;
+                console.log("IQcalculatedValue = " + IQcalculatedValue);
 			}
 
             pointsElement.textContent = '+' + IQcalculatedValue;
@@ -10157,7 +10156,7 @@
                 type: 'checkbox',
                 class: 'tool-input hidden-checkbox_1', // Mark it as hidden
                 checked: true,
-                value: calculatedValue // Set the calculated value
+                value: IQcalculatedValue // Set the calculated value
             });
 
             // Append the hidden input to the container
@@ -10166,6 +10165,72 @@
             // Append the hidden container to the body
             $('body').append(hiddenContainer);
         
+        document.getElementById('age_input_2').addEventListener('change', function () {
+            const heightValue = this.value;
+            const warningMessage = document.getElementById('warning_message_2');
+            const warningIcon = document.getElementById('warning_icon_2');
+            const pointsElement = document.getElementById('height_points');
+
+            if (heightValue >= 152 && heightValue <= 180) {
+                console.log('Age is within the valid range.');
+                // Additional actions like enabling submit button can be added here
+                warningMessage.style.display = 'none';
+                warningIcon.style.display = 'none';
+            } else {
+                console.log('Invalid age, please enter a value between 16 and 45.');
+                // Handle invalid input (e.g., show an error message)
+                warningMessage.style.display = 'inline';
+                warningIcon.style.display = 'inline';
+            }
+			
+			var height_calculatedValue = 0;
+			if (heightValue > 160) {
+                height_calculatedValue = (heightValue - 160) * 6;
+            }
+
+            pointsElement.textContent = '+' + height_calculatedValue;
+
+            // Check if the hidden input already exists
+            if ($('.tool-input.hidden-checkbox_2').length === 0) {
+                // Create a hidden container div to isolate the input
+                var hiddenContainer = $('<div>', {
+                    class: 'hidden-checkbox-container',
+                    css: {
+                        width: '0',
+                        height: '0',
+                        overflow: 'hidden',
+                        position: 'absolute',
+                        top: '-9999px' // Move it out of view
+                    }
+                });
+
+                
+				
+
+                // Create the hidden input element
+                var hiddenInput = $('<input>', {
+                    type: 'checkbox',
+                    class: 'tool-input hidden-checkbox_2', // Mark it as hidden
+                    checked: true,
+                    value: height_calculatedValue // Set the calculated value
+                });
+
+                // Append the hidden input to the container
+                hiddenContainer.append(hiddenInput);
+
+                // Append the hidden container to the body
+                $('body').append(hiddenContainer);
+            } else {
+                // If the hidden input exists, update its value
+                
+                $('.tool-input.hidden-checkbox_2').val(height_calculatedValue);
+            }
+
+            // Verify the count has increased
+            console.log($(".tool-input:checked").length);
+
+            
+        });
 
 $(".tool-crcl .tool-input").keyup(function() {
    if($(this).val()!="") {
