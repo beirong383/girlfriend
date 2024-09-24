@@ -7812,7 +7812,7 @@
 
                                                 if ($(this).attr("id") == "female") {
                                                     
-												} else if ($(this).attr("id") == "male") {
+                                                } else if (document.getElementById('male').checked) {
 													console.log("line 7816");
                                                     $(".class").text("你是男生，但我喜歡女生。");
 													$(".figure").text("你是男生，但我喜歡女生。");
@@ -8018,69 +8018,69 @@
 
 
 										<!--
-													<div class="tool-container container-input container-3 row">
+											<div class="tool-container container-input container-3 row">
 
-														<div class="col-xs-12 col-sm-6">
-															<h3>可愛</h3>
-														</div>
-														<div class="col-xs-6 col-sm-3">
-															<div class="tool-option">
-																<input type="radio" name="fam_illegal_0" value="0" id="fam_illegal_n"
-																	   class="tool-input">
-																<label for="n">No</label>
-															</div>
-														</div>
-														<div class="col-xs-6 col-sm-3">
-															<div class="tool-option">
-																<input type="radio" name="fam_illegal_0" value="10" id="fam_illegal_y"
-																	   class="tool-input">
-																<label for="fam_illegal_y">Yes<span class="points">+10</span></label>
-															</div>
-														</div>
+												<div class="col-xs-12 col-sm-6">
+													<h3>可愛</h3>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_0" value="0" id="fam_illegal_n"
+															   class="tool-input">
+														<label for="n">No</label>
 													</div>
-
-													<div class="tool-container container-input container-3 row">
-
-														<div class="col-xs-12 col-sm-6">
-															<h3>漂亮</h3>
-														</div>
-														<div class="col-xs-6 col-sm-3">
-															<div class="tool-option">
-																<input type="radio" name="fam_illegal_1" value="0" id="fam_illegal_n"
-																	   class="tool-input">
-																<label for="n">No</label>
-															</div>
-														</div>
-														<div class="col-xs-6 col-sm-3">
-															<div class="tool-option">
-																<input type="radio" name="fam_illegal_1" value="7" id="fam_illegal_y"
-																	   class="tool-input">
-																<label for="fam_illegal_y">Yes<span class="points">+7</span></label>
-															</div>
-														</div>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_0" value="10" id="fam_illegal_y"
+															   class="tool-input">
+														<label for="fam_illegal_y">Yes<span class="points">+10</span></label>
 													</div>
+												</div>
+											</div>
 
-													<div class="tool-container container-input container-3 row">
+											<div class="tool-container container-input container-3 row">
 
-														<div class="col-xs-12 col-sm-6">
-															<h3>性感</h3>
-														</div>
-														<div class="col-xs-6 col-sm-3">
-															<div class="tool-option">
-																<input type="radio" name="fam_illegal_2" value="0" id="fam_illegal_n"
-																	   class="tool-input">
-																<label for="n">No</label>
-															</div>
-														</div>
-														<div class="col-xs-6 col-sm-3">
-															<div class="tool-option">
-																<input type="radio" name="fam_illegal_2" value="5" id="fam_illegal_y"
-																	   class="tool-input">
-																<label for="fam_illegal_y">Yes<span class="points">+5</span></label>
-															</div>
-														</div>
+												<div class="col-xs-12 col-sm-6">
+													<h3>漂亮</h3>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_1" value="0" id="fam_illegal_n"
+															   class="tool-input">
+														<label for="n">No</label>
 													</div>
-			-->
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_1" value="7" id="fam_illegal_y"
+															   class="tool-input">
+														<label for="fam_illegal_y">Yes<span class="points">+7</span></label>
+													</div>
+												</div>
+											</div>
+
+											<div class="tool-container container-input container-3 row">
+
+												<div class="col-xs-12 col-sm-6">
+													<h3>性感</h3>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_2" value="0" id="fam_illegal_n"
+															   class="tool-input">
+														<label for="n">No</label>
+													</div>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_2" value="5" id="fam_illegal_y"
+															   class="tool-input">
+														<label for="fam_illegal_y">Yes<span class="points">+5</span></label>
+													</div>
+												</div>
+											</div>
+	-->
 
 										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
@@ -8187,6 +8187,40 @@
 													<input type="radio" name="trait_5" value="3" id="trait_fitness_y" class="tool-input">
 													<label for="trait_fitness_y">Yes<span class="points">+3</span></label>
 												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>素顏</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_43" value="0" id="trait_no_makeup_n" class="tool-input">
+													<label for="trait_no_makeup_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_43" value="15" id="trait_no_makeup_y" class="tool-input">
+													<label for="trait_no_makeup_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-8 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>身高 (公分)</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div style="display: flex; align-items: center;">
+													<input type="number" name="age" id="age_input_2" class="tool-input" min="1" max="245" step="1" value="" placeholder="Enter 身高">
+													<span class="points" style="margin-left: 10px;" id="height_points">+0</span>
+
+												</div>
+												<span id="warning_icon_2" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
+												<span id="warning_message_2" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是152到180，請檢查您的輸入是否正確。若確定正確請忽略此警告。</span>
+
 											</div>
 										</div>
 
@@ -8570,6 +8604,24 @@
 
 										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
+												<h3>不支持貧富差距</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_37_1" value="0" id="trait_support_env_n" class="tool-input">
+													<label for="trait_support_env_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_37_1" value="4" id="trait_support_env_y" class="tool-input">
+													<label for="trait_support_env_y">Yes<span class="points">+4</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
 												<h3>支持環保</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
@@ -8678,35 +8730,55 @@
 
 										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
-												<h3>素顏</h3>
+												<h3>吃完大餐後很少拉肚子</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="trait_43" value="0" id="trait_no_makeup_n" class="tool-input">
-													<label for="trait_no_makeup_n">No</label>
+													<input type="radio" name="trait_50" value="0" id="trait_no_diarrhea_n" class="tool-input">
+													<label for="trait_no_diarrhea_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="trait_43" value="15" id="trait_no_makeup_y" class="tool-input">
-													<label for="trait_no_makeup_y">Yes<span class="points">+15</span></label>
+													<input type="radio" name="trait_50" value="15" id="trait_no_diarrhea_y" class="tool-input">
+													<label for="trait_no_diarrhea_y">Yes<span class="points">+15</span></label>
 												</div>
 											</div>
 										</div>
 
-										<div class="tool-container container-input container-8 row">
+										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
-												<h3>身高 (公分)</h3>
+												<h3>沒有過敏</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
-												<div style="display: flex; align-items: center;">
-													<input type="number" name="age" id="age_input_2" class="tool-input" min="1" max="245" step="1" value="" placeholder="Enter 身高">
-													<span class="points" style="margin-left: 10px;" id="height_points">+0</span>
-
+												<div class="tool-option">
+													<input type="radio" name="trait_51" value="0" id="trait_no_allergy_n" class="tool-input">
+													<label for="trait_no_allergy_n">No</label>
 												</div>
-												<span id="warning_icon_2" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
-												<span id="warning_message_2" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是152到180，請檢查您的輸入是否正確。若確定正確請忽略此警告。</span>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_51" value="15" id="trait_no_allergy_y" class="tool-input">
+													<label for="trait_no_allergy_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
 
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>沒刺青、染頭髮、耳環</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_52" value="0" id="trait_no_tattoo_earring_n" class="tool-input">
+													<label for="trait_no_tattoo_earring_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_52" value="15" id="trait_no_tattoo_earring_y" class="tool-input">
+													<label for="trait_no_tattoo_earring_y">Yes<span class="points">+15</span></label>
+												</div>
 											</div>
 										</div>
 
@@ -8742,6 +8814,24 @@
 												<div class="tool-option">
 													<input type="radio" name="trait_46" value="42" id="trait_no_smoke_drink_y" class="tool-input">
 													<label for="trait_no_smoke_drink_y">Yes<span class="points">+42</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>信耶穌</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_57" value="0" id="trait_believe_in_jesus_n" class="tool-input">
+													<label for="trait_believe_in_jesus_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_57" value="57" id="trait_believe_in_jesus_y" class="tool-input">
+													<label for="trait_believe_in_jesus_y">Yes<span class="points">+57</span></label>
 												</div>
 											</div>
 										</div>
@@ -8802,54 +8892,18 @@
 
 										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
-												<h3>吃完大餐後很少拉肚子</h3>
+												<h3>無失智症家族史</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="trait_50" value="0" id="trait_no_diarrhea_n" class="tool-input">
-													<label for="trait_no_diarrhea_n">No</label>
+													<input type="radio" name="trait_49_1" value="0" id="trait_no_cancer_family_n" class="tool-input">
+													<label for="trait_no_cancer_family_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="trait_50" value="15" id="trait_no_diarrhea_y" class="tool-input">
-													<label for="trait_no_diarrhea_y">Yes<span class="points">+15</span></label>
-												</div>
-											</div>
-										</div>
-
-										<div class="tool-container container-input container-3 row">
-											<div class="col-xs-12 col-sm-6">
-												<h3>沒有過敏</h3>
-											</div>
-											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_51" value="0" id="trait_no_allergy_n" class="tool-input">
-													<label for="trait_no_allergy_n">No</label>
-												</div>
-											</div>
-											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_51" value="15" id="trait_no_allergy_y" class="tool-input">
-													<label for="trait_no_allergy_y">Yes<span class="points">+15</span></label>
-												</div>
-											</div>
-										</div>
-
-										<div class="tool-container container-input container-3 row">
-											<div class="col-xs-12 col-sm-6">
-												<h3>沒刺青或耳環</h3>
-											</div>
-											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_52" value="0" id="trait_no_tattoo_earring_n" class="tool-input">
-													<label for="trait_no_tattoo_earring_n">No</label>
-												</div>
-											</div>
-											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_52" value="15" id="trait_no_tattoo_earring_y" class="tool-input">
-													<label for="trait_no_tattoo_earring_y">Yes<span class="points">+15</span></label>
+													<input type="radio" name="trait_49_1" value="20" id="trait_no_cancer_family_y" class="tool-input">
+													<label for="trait_no_cancer_family_y">Yes<span class="points">+20</span></label>
 												</div>
 											</div>
 										</div>
@@ -8908,23 +8962,7 @@
 											</div>
 										</div>
 
-										<div class="tool-container container-input container-3 row">
-											<div class="col-xs-12 col-sm-6">
-												<h3>信耶穌</h3>
-											</div>
-											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_57" value="0" id="trait_believe_in_jesus_n" class="tool-input">
-													<label for="trait_believe_in_jesus_n">No</label>
-												</div>
-											</div>
-											<div class="col-xs-6 col-sm-3">
-												<div class="tool-option">
-													<input type="radio" name="trait_57" value="57" id="trait_believe_in_jesus_y" class="tool-input">
-													<label for="trait_believe_in_jesus_y">Yes<span class="points">+57</span></label>
-												</div>
-											</div>
-										</div>
+
 
 										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
