@@ -7810,8 +7810,16 @@
 											$(".tool-input").change(function () {
 												result = 0;
 
-
-
+                                                if ($(this).attr("id") == "female") {
+                                                    
+												} else if ($(this).attr("id") == "male") {
+													console.log("line 7816");
+                                                    $(".class").text("你是男生，但我喜歡女生。");
+													$(".figure").text("你是男生，但我喜歡女生。");
+													return;
+													console.log("line 7819");
+                                                }
+												console.log("line 7820");
 												$(".tool-input:checked").each(function () {
 													result += 1 * $(this).val();
 												});
