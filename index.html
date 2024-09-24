@@ -7801,33 +7801,16 @@
 											$(".tool-input").change(function () {
 												result = 0;
 
-												if ($(this).attr("id") == "female") {
-													//Change all applicable values
-													//fam_alcohol,fam_illegal_drugs,sexual_abuse
-													$("#fam_alcohol_y").val(1);
-													$("#fam_alcohol_y").next("label").find(".points").text("+1");
-													$("#fam_illegal_y").val(2);
-													$("#fam_illegal_y").next("label").find(".points").text("+2");
-													$("#sexual_abuse_y").val(3);
-													$("#sexual_abuse_y").next("label").find(".points").text("+3");
-												} else if ($(this).attr("id") == "male") {
-													//Change all applicable values
-													//fam_alcohol,fam_illegal_drugs,sexual_abuse
-													$("#fam_alcohol_y").val(3);
-													$("#fam_alcohol_y").next("label").find(".points").text("+3");
-													$("#fam_illegal_y").val(3);
-													$("#fam_illegal_y").next("label").find(".points").text("+3");
-													$("#sexual_abuse_y").val(0);
-													$("#sexual_abuse_y").next("label").find(".points").text("+0");
-													$(".figure").text("你是男生，但我喜歡女生。"); return;
-												}
+												
 
 												$(".tool-input:checked").each(function () {
 													result += 1 * $(this).val();
 												});
 												if (!isNaN(result)) {
-
-													if ($(".tool-input:checked").length == 11) {
+                                                    console.log("$(\".tool-input\").length = " + $(".tool-input").length);
+													console.log("$(\".tool-input:checked\").length = " + $(".tool-input:checked").length);
+													console.log("$(\".tool-container\").length = " + $(".tool-container").length);
+													if ($(".tool-input:checked").length == $(".tool-container").length-1) {
 														if (result >= 0 && result <= 3) {
 															$(".tool-result-interpretation .class").text("Low Risk");
 														} else if (result >= 4 && result <= 7) {
@@ -7993,14 +7976,14 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="sex" value="0" id="male"
-														class="tool-input">
+														   class="tool-input">
 													<label for="male">Male</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="sex" value="0" id="female"
-														class="tool-input">
+														   class="tool-input">
 													<label for="female">Female</label>
 												</div>
 											</div>
@@ -8012,59 +7995,1132 @@
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div style="display: flex; align-items: center;">
-													<input type="number" name="age" id="age_input" class="tool-input" min="1" max="145" step="1" value="" placeholder="Enter age">
+													<input type="number" name="age" id="age_input_0" class="tool-input" min="1" max="145" step="1" value="" placeholder="Enter age">
 													<span class="points" style="margin-left: 10px;">+0</span>
-													
+
 												</div>
-												<span id="warning_icon" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
-													<span id="warning_message" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是17到25，請檢查您的輸入是否正確。若確定正確請忽略此警告。</span>
-											
+												<span id="warning_icon_0" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
+												<span id="warning_message_0" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是17到25，請檢查您的輸入是否正確。若確定正確請忽略此警告。</span>
+
 											</div>
 										</div>
-										
 
-										
-										<div class="tool-container container-input container-2 row">
 
+
+
+										<!--
+											<div class="tool-container container-input container-3 row">
+
+												<div class="col-xs-12 col-sm-6">
+													<h3>可愛</h3>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_0" value="0" id="fam_illegal_n"
+															   class="tool-input">
+														<label for="n">No</label>
+													</div>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_0" value="10" id="fam_illegal_y"
+															   class="tool-input">
+														<label for="fam_illegal_y">Yes<span class="points">+10</span></label>
+													</div>
+												</div>
+											</div>
+
+											<div class="tool-container container-input container-3 row">
+
+												<div class="col-xs-12 col-sm-6">
+													<h3>漂亮</h3>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_1" value="0" id="fam_illegal_n"
+															   class="tool-input">
+														<label for="n">No</label>
+													</div>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_1" value="7" id="fam_illegal_y"
+															   class="tool-input">
+														<label for="fam_illegal_y">Yes<span class="points">+7</span></label>
+													</div>
+												</div>
+											</div>
+
+											<div class="tool-container container-input container-3 row">
+
+												<div class="col-xs-12 col-sm-6">
+													<h3>性感</h3>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_2" value="0" id="fam_illegal_n"
+															   class="tool-input">
+														<label for="n">No</label>
+													</div>
+												</div>
+												<div class="col-xs-6 col-sm-3">
+													<div class="tool-option">
+														<input type="radio" name="fam_illegal_2" value="5" id="fam_illegal_y"
+															   class="tool-input">
+														<label for="fam_illegal_y">Yes<span class="points">+5</span></label>
+													</div>
+												</div>
+											</div>
+	-->
+
+										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
-												<h3>Alcohol</h3>
+												<h3>可愛</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="fam_alcohol" value="0" id="fam_alcohol_n"
-														class="tool-input">
-													<label for="fam_alcohol_n">No</label>
+													<input type="radio" name="trait_0" value="0" id="trait_cute_n" class="tool-input">
+													<label for="trait_cute_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="fam_alcohol" value="0" id="fam_alcohol_y"
-														class="tool-input">
-													<label for="fam_alcohol_n">Yes<span class="points">+0</span></label>
+													<input type="radio" name="trait_0" value="10" id="trait_cute_y" class="tool-input">
+													<label for="trait_cute_y">Yes<span class="points">+10</span></label>
 												</div>
 											</div>
 										</div>
 
 										<div class="tool-container container-input container-3 row">
-
 											<div class="col-xs-12 col-sm-6">
-												<h3>Illegal drugs</h3>
+												<h3>漂亮</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="fam_illegal" value="0" id="fam_illegal_n"
-														class="tool-input">
-													<label for="n">No</label>
+													<input type="radio" name="trait_1" value="0" id="trait_pretty_n" class="tool-input">
+													<label for="trait_pretty_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
-													<input type="radio" name="fam_illegal" value="0" id="fam_illegal_y"
-														class="tool-input">
-													<label for="fam_illegal_y">Yes<span class="points">+0</span></label>
+													<input type="radio" name="trait_1" value="7" id="trait_pretty_y" class="tool-input">
+													<label for="trait_pretty_y">Yes<span class="points">+7</span></label>
 												</div>
 											</div>
 										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>性感</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_2" value="0" id="trait_sexy_n" class="tool-input">
+													<label for="trait_sexy_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_2" value="5" id="trait_sexy_y" class="tool-input">
+													<label for="trait_sexy_y">Yes<span class="points">+5</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>長髮</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_3" value="0" id="trait_longhair_n" class="tool-input">
+													<label for="trait_longhair_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_3" value="12" id="trait_longhair_y" class="tool-input">
+													<label for="trait_longhair_y">Yes<span class="points">+12</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>身材好</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_4" value="0" id="trait_goodbody_n" class="tool-input">
+													<label for="trait_goodbody_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_4" value="7" id="trait_goodbody_y" class="tool-input">
+													<label for="trait_goodbody_y">Yes<span class="points">+7</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>有健身</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_5" value="0" id="trait_fitness_n" class="tool-input">
+													<label for="trait_fitness_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_5" value="3" id="trait_fitness_y" class="tool-input">
+													<label for="trait_fitness_y">Yes<span class="points">+3</span></label>
+												</div>
+											</div>
+										</div>
+
+										<!-- Continue for all 59 traits in a similar format -->
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>聰明</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_6" value="0" id="trait_smart_n" class="tool-input">
+													<label for="trait_smart_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_6" value="10" id="trait_smart_y" class="tool-input">
+													<label for="trait_smart_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-8 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3><strong>IQ (不知道者請輸入100)</strong></h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div style="display: flex; align-items: center;">
+													<input type="number" name="age" id="age_input_1" class="tool-input" min="80" max="145" step="1" value="100" placeholder="Enter IQ">
+													<span class="points" style="margin-left: 10px;">+0</span>
+
+												</div>
+												<span id="warning_icon_1" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
+												<span id="warning_message_1" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是80到145，請檢查您的輸入是否正確。若確定正確請忽略此警告。</span>
+
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>成熟</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_7" value="0" id="trait_mature_n" class="tool-input">
+													<label for="trait_mature_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_7" value="10" id="trait_mature_y" class="tool-input">
+													<label for="trait_mature_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>獨立</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_8" value="0" id="trait_independent_n" class="tool-input">
+													<label for="trait_independent_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_8" value="10" id="trait_independent_y" class="tool-input">
+													<label for="trait_independent_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>善良</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_9" value="0" id="trait_kind_n" class="tool-input">
+													<label for="trait_kind_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_9" value="10" id="trait_kind_y" class="tool-input">
+													<label for="trait_kind_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>溫柔</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_10" value="0" id="trait_gentle_n" class="tool-input">
+													<label for="trait_gentle_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_10" value="8" id="trait_gentle_y" class="tool-input">
+													<label for="trait_gentle_y">Yes<span class="points">+8</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>體貼</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_11" value="0" id="trait_thoughtful_n" class="tool-input">
+													<label for="trait_thoughtful_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_11" value="10" id="trait_thoughtful_y" class="tool-input">
+													<label for="trait_thoughtful_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>大方</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_12" value="0" id="trait_generous_n" class="tool-input">
+													<label for="trait_generous_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_12" value="6" id="trait_generous_y" class="tool-input">
+													<label for="trait_generous_y">Yes<span class="points">+6</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>善解人意</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_13" value="0" id="trait_understanding_n" class="tool-input">
+													<label for="trait_understanding_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_13" value="10" id="trait_understanding_y" class="tool-input">
+													<label for="trait_understanding_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>正向</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_14" value="0" id="trait_positive_n" class="tool-input">
+													<label for="trait_positive_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_14" value="10" id="trait_positive_y" class="tool-input">
+													<label for="trait_positive_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>陽光</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_15" value="0" id="trait_sunny_n" class="tool-input">
+													<label for="trait_sunny_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_15" value="10" id="trait_sunny_y" class="tool-input">
+													<label for="trait_sunny_y">Yes<span class="points">+10</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>熱情</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_16" value="0" id="trait_passionate_n" class="tool-input">
+													<label for="trait_passionate_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_16" value="8" id="trait_passionate_y" class="tool-input">
+													<label for="trait_passionate_y">Yes<span class="points">+8</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>積極面對挑戰</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_17" value="0" id="trait_challenge_n" class="tool-input">
+													<label for="trait_challenge_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_18" value="16" id="trait_challenging_y" class="tool-input">
+													<label for="trait_challenging_y">Yes<span class="points">+16</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>生活豐富</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_19" value="0" id="trait_richlife_n" class="tool-input">
+													<label for="trait_richlife_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_19" value="9" id="trait_richlife_y" class="tool-input">
+													<label for="trait_richlife_y">Yes<span class="points">+9</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>人緣好</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_20" value="0" id="trait_popular_n" class="tool-input">
+													<label for="trait_popular_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_20" value="16" id="trait_popular_y" class="tool-input">
+													<label for="trait_popular_y">Yes<span class="points">+16</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>欣賞我</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_21" value="0" id="trait_appreciate_n" class="tool-input">
+													<label for="trait_appreciate_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_21" value="12" id="trait_appreciate_y" class="tool-input">
+													<label for="trait_appreciate_y">Yes<span class="points">+12</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>對愛情認真</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_22" value="0" id="trait_seriouslove_n" class="tool-input">
+													<label for="trait_seriouslove_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_22" value="3" id="trait_seriouslove_y" class="tool-input">
+													<label for="trait_seriouslove_y">Yes<span class="points">+3</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>想生小孩</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_23" value="0" id="trait_wantkids_n" class="tool-input">
+													<label for="trait_wantkids_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_23" value="35" id="trait_wantkids_y" class="tool-input">
+													<label for="trait_wantkids_y">Yes<span class="points">+35</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>想生很多小孩</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_24" value="0" id="trait_wantmanykids_n" class="tool-input">
+													<label for="trait_wantmanykids_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_24" value="47" id="trait_wantmanykids_y" class="tool-input">
+													<label for="trait_wantmanykids_y">Yes<span class="points">+47</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>母胎單身</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_25" value="0" id="trait_singleborn_n" class="tool-input">
+													<label for="trait_singleborn_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_25" value="12" id="trait_singleborn_y" class="tool-input">
+													<label for="trait_singleborn_y">Yes<span class="points">+12</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>成功被我帶到陽明山頂操場</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_36" value="0" id="trait_ym_topfield_n" class="tool-input">
+													<label for="trait_ym_topfield_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_36" value="15" id="trait_ym_topfield_y" class="tool-input">
+													<label for="trait_ym_topfield_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>支持環保</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_37" value="0" id="trait_support_env_n" class="tool-input">
+													<label for="trait_support_env_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_37" value="4" id="trait_support_env_y" class="tool-input">
+													<label for="trait_support_env_y">Yes<span class="points">+4</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>喜歡傳福音</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_38" value="0" id="trait_evangelize_n" class="tool-input">
+													<label for="trait_evangelize_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_38" value="4" id="trait_evangelize_y" class="tool-input">
+													<label for="trait_evangelize_y">Yes<span class="points">+4</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>浪漫</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_39" value="0" id="trait_romantic_n" class="tool-input">
+													<label for="trait_romantic_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_39" value="3" id="trait_romantic_y" class="tool-input">
+													<label for="trait_romantic_y">Yes<span class="points">+3</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>會運動</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_40" value="0" id="trait_sports_skill_n" class="tool-input">
+													<label for="trait_sports_skill_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_40" value="15" id="trait_sports_skill_y" class="tool-input">
+													<label for="trait_sports_skill_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>沒近視</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_41" value="0" id="trait_no_nearsighted_n" class="tool-input">
+													<label for="trait_no_nearsighted_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_41" value="15" id="trait_no_nearsighted_y" class="tool-input">
+													<label for="trait_no_nearsighted_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>沒矯正牙齒排列</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_42" value="0" id="trait_no_braces_n" class="tool-input">
+													<label for="trait_no_braces_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_42" value="15" id="trait_no_braces_y" class="tool-input">
+													<label for="trait_no_braces_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>素顏</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_43" value="0" id="trait_no_makeup_n" class="tool-input">
+													<label for="trait_no_makeup_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_43" value="15" id="trait_no_makeup_y" class="tool-input">
+													<label for="trait_no_makeup_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>身高>160公分，每多一公分加6分</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_44" value="0" id="trait_height_over160_n" class="tool-input">
+													<label for="trait_height_over160_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_44" value="0" id="trait_height_over160_y" class="tool-input">
+													<label for="trait_height_over160_y">Yes<span class="points">+6 per cm</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>不養寵物</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_45" value="0" id="trait_no_pets_n" class="tool-input">
+													<label for="trait_no_pets_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_45" value="12" id="trait_no_pets_y" class="tool-input">
+													<label for="trait_no_pets_y">Yes<span class="points">+12</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>不菸不酒</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_46" value="0" id="trait_no_smoke_drink_n" class="tool-input">
+													<label for="trait_no_smoke_drink_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_46" value="42" id="trait_no_smoke_drink_y" class="tool-input">
+													<label for="trait_no_smoke_drink_y">Yes<span class="points">+42</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>每天讀聖經</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_47" value="0" id="trait_read_bible_n" class="tool-input">
+													<label for="trait_read_bible_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_47" value="76" id="trait_read_bible_y" class="tool-input">
+													<label for="trait_read_bible_y">Yes<span class="points">+76</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>每天禱告</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_48" value="0" id="trait_pray_n" class="tool-input">
+													<label for="trait_pray_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_48" value="76" id="trait_pray_y" class="tool-input">
+													<label for="trait_pray_y">Yes<span class="points">+76</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>無癌症家族史</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_49" value="0" id="trait_no_cancer_family_n" class="tool-input">
+													<label for="trait_no_cancer_family_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_49" value="20" id="trait_no_cancer_family_y" class="tool-input">
+													<label for="trait_no_cancer_family_y">Yes<span class="points">+20</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>吃完大餐後很少拉肚子</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_50" value="0" id="trait_no_diarrhea_n" class="tool-input">
+													<label for="trait_no_diarrhea_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_50" value="15" id="trait_no_diarrhea_y" class="tool-input">
+													<label for="trait_no_diarrhea_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>沒有過敏</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_51" value="0" id="trait_no_allergy_n" class="tool-input">
+													<label for="trait_no_allergy_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_51" value="15" id="trait_no_allergy_y" class="tool-input">
+													<label for="trait_no_allergy_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>沒刺青或耳環</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_52" value="0" id="trait_no_tattoo_earring_n" class="tool-input">
+													<label for="trait_no_tattoo_earring_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_52" value="15" id="trait_no_tattoo_earring_y" class="tool-input">
+													<label for="trait_no_tattoo_earring_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>用手機的時間有限</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_53" value="0" id="trait_limited_phone_time_n" class="tool-input">
+													<label for="trait_limited_phone_time_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_53" value="8" id="trait_limited_phone_time_y" class="tool-input">
+													<label for="trait_limited_phone_time_y">Yes<span class="points">+8</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>用social media的時間有限</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_54" value="0" id="trait_limited_social_media_time_n" class="tool-input">
+													<label for="trait_limited_social_media_time_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_54" value="8" id="trait_limited_social_media_time_y" class="tool-input">
+													<label for="trait_limited_social_media_time_y">Yes<span class="points">+8</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>第一志願高中畢業（如北一、雄女、中女中、南女）</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_56" value="0" id="trait_top_high_school_n" class="tool-input">
+													<label for="trait_top_high_school_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_56" value="23" id="trait_top_high_school_y" class="tool-input">
+													<label for="trait_top_high_school_y">Yes<span class="points">+23</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>信耶穌</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_57" value="0" id="trait_believe_in_jesus_n" class="tool-input">
+													<label for="trait_believe_in_jesus_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_57" value="57" id="trait_believe_in_jesus_y" class="tool-input">
+													<label for="trait_believe_in_jesus_y">Yes<span class="points">+57</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>想出國</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_58" value="0" id="trait_want_to_go_abroad_n" class="tool-input">
+													<label for="trait_want_to_go_abroad_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_58" value="35" id="trait_want_to_go_abroad_y" class="tool-input">
+													<label for="trait_want_to_go_abroad_y">Yes<span class="points">+35</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>喜歡鄉下</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_59" value="0" id="trait_like_rural_n" class="tool-input">
+													<label for="trait_like_rural_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_59" value="23" id="trait_like_rural_y" class="tool-input">
+													<label for="trait_like_rural_y">Yes<span class="points">+23</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>處女</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_60" value="0" id="trait_virgin_n" class="tool-input">
+													<label for="trait_virgin_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_60" value="42" id="trait_virgin_y" class="tool-input">
+													<label for="trait_virgin_y">Yes<span class="points">+42</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>講話很直接</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_61" value="0" id="trait_direct_speaker_n" class="tool-input">
+													<label for="trait_direct_speaker_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_61" value="15" id="trait_direct_speaker_y" class="tool-input">
+													<label for="trait_direct_speaker_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>有氣質</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_62" value="0" id="trait_elegant_n" class="tool-input">
+													<label for="trait_elegant_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_62" value="8" id="trait_elegant_y" class="tool-input">
+													<label for="trait_elegant_y">Yes<span class="points">+8</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>懂醫生</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_63" value="0" id="trait_medical_knowledge_n" class="tool-input">
+													<label for="trait_medical_knowledge_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_63" value="8" id="trait_medical_knowledge_y" class="tool-input">
+													<label for="trait_medical_knowledge_y">Yes<span class="points">+8</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>看過我和我妹互動</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_64" value="0" id="trait_seen_me_sister_interact_n" class="tool-input">
+													<label for="trait_seen_me_sister_interact_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_64" value="8" id="trait_seen_me_sister_interact_y" class="tool-input">
+													<label for="trait_seen_me_sister_interact_y">Yes<span class="points">+8</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>會表達意見</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_67" value="0" id="trait_express_opinion_n" class="tool-input">
+													<label for="trait_express_opinion_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_67" value="15" id="trait_express_opinion_y" class="tool-input">
+													<label for="trait_express_opinion_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>會表達感受</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_68" value="0" id="trait_express_feelings_n" class="tool-input">
+													<label for="trait_express_feelings_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_68" value="15" id="trait_express_feelings_y" class="tool-input">
+													<label for="trait_express_feelings_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>會表達需求</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_69" value="0" id="trait_express_needs_n" class="tool-input">
+													<label for="trait_express_needs_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_69" value="15" id="trait_express_needs_y" class="tool-input">
+													<label for="trait_express_needs_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
+												<h3>會告訴我我該改的缺點</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_70" value="0" id="trait_tell_improvements_n" class="tool-input">
+													<label for="trait_tell_improvements_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_70" value="15" id="trait_tell_improvements_y" class="tool-input">
+													<label for="trait_tell_improvements_y">Yes<span class="points">+15</span></label>
+												</div>
+											</div>
+										</div>
+
+
+
+
+
 
 										<div class="tool-container container-input container-4 row">
 
@@ -8074,14 +9130,14 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_4" value="0" id="q_4_n"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_4_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_4" value="4" id="q_4_y"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_4_y">Yes<span class="points">+4</span></label>
 												</div>
 											</div>
@@ -8096,14 +9152,14 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_5" value="0" id="q_5_n"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_5_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_5" value="3" id="q_5_y"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_5_y">Yes<span class="points">+3</span></label>
 												</div>
 											</div>
@@ -8117,14 +9173,14 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_6" value="0" id="q_6_n"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_6_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_6" value="4" id="q_6_y"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_6_y">Yes<span class="points">+4</span></label>
 												</div>
 											</div>
@@ -8138,14 +9194,14 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_7" value="0" id="q_7_n"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_7_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_7" value="5" id="q_7_y"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_7_y">Yes<span class="points">+5</span></label>
 												</div>
 											</div>
@@ -8160,16 +9216,17 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="sexual_abuse" value="0"
-														id="sexual_abuse_n" class="tool-input">
+														   id="sexual_abuse_n" class="tool-input">
 													<label for="sexual_abuse_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="sexual_abuse" value="0"
-														id="sexual_abuse_y" class="tool-input">
-													<label for="sexual_abuse_y">Yes<span
-															class="points">+0</span></label>
+														   id="sexual_abuse_y" class="tool-input">
+													<label for="sexual_abuse_y">
+														Yes<span class="points">+0</span>
+													</label>
 												</div>
 											</div>
 										</div>
@@ -8183,14 +9240,14 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_10" value="0" id="q_10_n"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_10_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_10" value="2" id="q_10_y"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_10_y">Yes<span class="points">+2</span></label>
 												</div>
 											</div>
@@ -8204,14 +9261,14 @@
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_11" value="0" id="q_11_n"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_11_n">No</label>
 												</div>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
 													<input type="radio" name="q_11" value="1" id="q_11_y"
-														class="tool-input">
+														   class="tool-input">
 													<label for="q_11_y">Yes<span class="points">+1</span></label>
 												</div>
 											</div>
@@ -8222,7 +9279,8 @@
 											<div class="tool-result"><span class="figure">0 points</span></div>
 
 											<div class="tool-result-interpretation">
-												<h3><span class="class" style="float: right;"></span>Interpretation:
+												<h3>
+													<span class="class" style="float: right;"></span>Interpretation:
 												</h3>
 												<p>Risk category is based on score</p>
 												<ul>
@@ -8234,18 +9292,22 @@
 										</div>
 
 
-										
+
 
 									</div>
-								</div>
-								<hr>
-								<div class="calculators-note">
-									<p><strong><span class="glyphicon glyphicon-info-sign"></span> This calculator
-											operates entirely from your device.</strong><br> No input variables or data
-										is transmitted between your computer and our servers.</p>
-								</div>
-							</div>
-						</div>
+										</div>
+										<hr>
+										<div class="calculators-note">
+											<p>
+												<strong>
+													<span class="glyphicon glyphicon-info-sign"></span> This calculator
+													operates entirely from your device.
+												</strong><br> No input variables or data
+												is transmitted between your computer and our servers.
+											</p>
+										</div>
+									</div>
+									</div>
 					</div>
 				</div>
 			</div>
@@ -8980,10 +10042,10 @@
 	</div>
 
 	<script>
-		document.getElementById('age_input').addEventListener('change', function() {
+		document.getElementById('age_input_0').addEventListener('change', function() {
     const ageValue = this.value;
-	const warningMessage = document.getElementById('warning_message');
-	const warningIcon = document.getElementById('warning_icon');
+	const warningMessage = document.getElementById('warning_message_0');
+	const warningIcon = document.getElementById('warning_icon_0');
 	const pointsElement = document.querySelector('.points');
 
     if (ageValue >= 17 && ageValue <= 25) {
@@ -8998,8 +10060,112 @@
 		warningIcon.style.display = 'inline';
     }
 
-	pointsElement.textContent = '+' + (22-ageValue)*12;
+			pointsElement.textContent = '+' + (22 - ageValue) * 12;
+
+            // Check if the hidden input already exists
+            if ($('.tool-input.hidden-checkbox_0').length === 0) {
+                // Create a hidden container div to isolate the input
+                var hiddenContainer = $('<div>', {
+                    class: 'hidden-checkbox-container',
+                    css: {
+                        width: '0',
+                        height: '0',
+                        overflow: 'hidden',
+                        position: 'absolute',
+                        top: '-9999px' // Move it out of view
+                    }
+                });
+
+                // Calculate the value as (22 - ageValue) * 12
+                var calculatedValue = (22 - ageValue) * 12;
+
+                // Create the hidden input element
+                var hiddenInput = $('<input>', {
+                    type: 'checkbox',
+                    class: 'tool-input hidden-checkbox_0', // Mark it as hidden
+                    checked: true,
+                    value: calculatedValue // Set the calculated value
+                });
+
+                // Append the hidden input to the container
+                hiddenContainer.append(hiddenInput);
+
+                // Append the hidden container to the body
+                $('body').append(hiddenContainer);
+            } else {
+                // If the hidden input exists, update its value
+                var calculatedValue = (22 - ageValue) * 12;
+                $('.tool-input.hidden-checkbox_0').val(calculatedValue);
+            }
+
+            // Verify the count has increased
+            console.log($(".tool-input:checked").length);
+
+
 });
+
+        document.getElementById('age_input_1').addEventListener('change', function () {
+            const IQValue = this.value;
+            const warningMessage = document.getElementById('warning_message_1');
+            const warningIcon = document.getElementById('warning_icon_1');
+            const pointsElement = document.querySelector('.points');
+
+            if (IQValue >= 80 && IQValue <= 145) {
+                console.log('Age is within the valid range.');
+                // Additional actions like enabling submit button can be added here
+                warningMessage.style.display = 'none';
+                warningIcon.style.display = 'none';
+            } else {
+                console.log('Invalid age, please enter a value between 16 and 45.');
+                // Handle invalid input (e.g., show an error message)
+                warningMessage.style.display = 'inline';
+                warningIcon.style.display = 'inline';
+            }
+
+			if (IQValue > 130) {
+				console.log("IQcalculatedValue = " + IQcalculatedValue);
+				IQcalculatedValue = (IQvalue - 130) * 8;
+			}
+
+            pointsElement.textContent = '+' + IQcalculatedValue;
+
+            $('.tool-input.hidden-checkbox_1').val(IQcalculatedValue);
+
+            
+
+
+        });
+
+        
+            // Create a hidden container div to isolate the input
+            var hiddenContainer = $('<div>', {
+                class: 'hidden-checkbox-container',
+                css: {
+                    width: '0',
+                    height: '0',
+                    overflow: 'hidden',
+                    position: 'absolute',
+                    top: '-9999px' // Move it out of view
+                }
+            });
+
+            // Calculate the value as (22 - ageValue) * 12
+            var IQcalculatedValue = 0;
+
+            // Create the hidden input element
+            var hiddenInput = $('<input>', {
+                type: 'checkbox',
+                class: 'tool-input hidden-checkbox_1', // Mark it as hidden
+                checked: true,
+                value: calculatedValue // Set the calculated value
+            });
+
+            // Append the hidden input to the container
+            hiddenContainer.append(hiddenInput);
+
+            // Append the hidden container to the body
+            $('body').append(hiddenContainer);
+        
 
 $(".tool-crcl .tool-input").keyup(function() {
    if($(this).val()!="") {
