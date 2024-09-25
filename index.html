@@ -12,6 +12,8 @@
 	<script src="./index_files/9964.js.下載" async="" type="text/javascript"></script>
 	<script async="" src="./index_files/js"></script>
 	<script>
+		var CUTOFF = 438.5;
+		var RECORD = 863;
 		window.dataLayer = window.dataLayer || [];
 		function gtag() { dataLayer.push(arguments); }
 		gtag('js', new Date());
@@ -7828,16 +7830,103 @@
 													console.log("$(\".tool-input:checked\").length = " + $(".tool-input:checked").length);
 													console.log("$(\".tool-container\").length = " + $(".tool-container").length);
 													if ($(".tool-input:checked").length == $(".tool-container").length - 1) {
-														if (result >= 0 && result <= 3) {
-															$(".tool-result-interpretation .class").text("Low Risk");
-														} else if (result >= 4 && result <= 7) {
-															$(".tool-result-interpretation .class").text("Moderate Risk");
-														} else if (result >= 8) {
-															$(".tool-result-interpretation .class").text("High Risk");
+														if (result >= 0 && result <= CUTOFF) {
+															$(".tool-result-interpretation .class").text("妳距離我的理想型差了" + (CUTOFF-result) + "分。");
+														} else if (result >= CUTOFF && result <= RECORD) {
+															$(".tool-result-interpretation .class").text("妳是我的理想型！");
+														} else if (result >= RECORD) {
+															$(".tool-result-interpretation .class").text("妳是我的理想型！");
 														} else {
 															$(".tool-result-interpretation .class").html("&nbsp;");
 														}
 														$(".tool-result .figure").text(result + " points");
+
+														// Check if the result score is higher than 438.5 points
+if (result > CUTOFF) {
+    // Locate the container where the button should be appended
+    const resultContainer = document.querySelector(".tool-container.container-result");
+
+    // Check if the button already exists
+    let copyButton = document.getElementById("copyButton");
+    let instructions = document.getElementById("instructions");
+
+    if (!copyButton) {
+        // If the button doesn't exist, create it
+        copyButton = document.createElement("button");
+        copyButton.innerHTML = "複製結果";
+        copyButton.id = "copyButton";  // Assign an ID for future reference
+        copyButton.style.display = "block";
+        copyButton.style.marginTop = "20px";
+        copyButton.style.padding = "10px";
+        copyButton.style.fontSize = "16px";
+
+        // Append the button to the result container
+        resultContainer.appendChild(copyButton);
+
+        // Create and append instructions if not already present
+        if (!instructions) {
+            instructions = document.createElement("p");
+            instructions.innerHTML = "請點以上按鈕將結果複製，然後用Instagram傳送給我。我的Instagram連結在頁面最上方的自我介紹中。";
+            instructions.style.fontSize = "16px";
+            instructions.style.marginTop = "10px";
+            instructions.id = "instructions";  // Give the instructions an ID
+            resultContainer.appendChild(instructions);
+        }
+    }
+
+    // Assign the click event to the existing or new button
+    copyButton.onclick = function() {
+        copyResultsToClipboard(result);  // Call the function to copy results to clipboard
+    };
+}
+
+// Function to copy the result score and selected traits to clipboard
+function copyResultsToClipboard(score) {
+    const traits = getSelectedTraits();  // Fetch the selected traits
+    const resultText = `總分: ${score}\n選擇的特質: ${traits.join(', ')}`;
+    
+    // Use the clipboard API to copy the result
+    navigator.clipboard.writeText(resultText).then(function() {
+        alert("結果已複製到剪貼簿！");
+    }, function(err) {
+        console.error("無法複製到剪貼簿: ", err);
+    });
+}
+
+function getSelectedTraits() {
+    const selectedTraits = [];
+    const yesTraits = document.querySelectorAll("input[type='radio'][value]:checked");
+
+    yesTraits.forEach(function(trait) {
+		// Get the corresponding label text for the selected "Yes" trait
+		const label = document.querySelector(`label[for='${trait.id}']`).innerText;
+		console.log(label);
+        if(label[0] == 'Y'){
+			// Get the corresponding h3 for the selected trait
+			const h3 = trait.closest('.tool-container.container-input').querySelector('h3');
+        
+			if (h3) {
+				const traitName = h3.innerText.trim();  // Get the text from the h3
+				selectedTraits.push(traitName);
+			}
+		}
+		
+        
+    });
+    
+	selectedTraits.push("" + document.getElementById("age_input_0").value + "歲");
+	selectedTraits.push("IQ" + document.getElementById("age_input_1").value);
+	selectedTraits.push("身高" + document.getElementById("age_input_2").value + "cm");
+
+    return selectedTraits;
+}
+
+
+
+
+
+
+
 													} else {
 														$(".tool-result-interpretation .class,.tool-result .figure").html("Please answer all questions");
 													}
@@ -8640,7 +8729,7 @@
 
 										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
-												<h3>母胎單身</h3>
+												<h3>沒交過男朋友</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
 												<div class="tool-option">
@@ -9390,11 +9479,10 @@
 												<h3>
 													<span class="class" style="float: right;"></span>Interpretation:
 												</h3>
-												<p>Risk category is based on score</p>
+												<p>category is based on score</p>
 												<ul>
-													<li>Low Risk: 0-3</li>
-													<li>Moderate Risk: 4-7</li>
-													<li>High Risk: 8 and greater</li>
+													<li>&gt;438.5分: 妳是我的理想型！</li>
+													<li>&gt;863分: 破紀錄！</li>
 												</ul>
 											</div>
 										</div>
