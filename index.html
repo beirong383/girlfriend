@@ -7841,8 +7841,7 @@
 														}
 														$(".tool-result .figure").text(result + " points");
 
-														// Check if the result score is higher than 438.5 points
-if (result > 438.5) {
+														
     // Locate the container where the button should be appended
     const resultContainer = document.querySelector(".tool-container.container-result");
 
@@ -7863,8 +7862,11 @@ if (result > 438.5) {
         // Append the button to the result container
         resultContainer.appendChild(copyButton);
 
-        // Create and append instructions if not already present
-        if (!instructions) {
+        
+    }
+
+	// Create and append instructions if not already present
+	if (!instructions && result>CUTOFF) {
             instructions = document.createElement("p");
             instructions.innerHTML = "請點以上按鈕將結果複製，然後用Instagram傳送給我。我的Instagram連結在頁面最上方的自我介紹中。";
             instructions.style.fontSize = "16px";
@@ -7872,13 +7874,12 @@ if (result > 438.5) {
             instructions.id = "instructions";  // Give the instructions an ID
             resultContainer.appendChild(instructions);
         }
-    }
 
     // Assign the click event to the existing or new button
     copyButton.onclick = function() {
         copyResultsToClipboard(result);  // Call the function to copy results to clipboard
     };
-}
+
 
 // Function to copy the result score and selected traits to clipboard
 function copyResultsToClipboard(score) {
