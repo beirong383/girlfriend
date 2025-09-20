@@ -10726,7 +10726,7 @@ function getSelectedTraits() {
                 });
 
                 // Calculate the value as (22 - ageValue) * 12
-                var calculatedValue = (22 - ageValue) * 12;
+                var calculatedValue = (23 - ageValue) * 16;
 
                 // Create the hidden input element
                 var hiddenInput = $('<input>', {
@@ -10743,7 +10743,7 @@ function getSelectedTraits() {
                 $('body').append(hiddenContainer);
             } else {
                 // If the hidden input exists, update its value
-                var calculatedValue = (22 - ageValue) * 12;
+                var calculatedValue = (23 - ageValue) * 16;
                 $('.tool-input.hidden-checkbox_0').val(calculatedValue);
             }
 
