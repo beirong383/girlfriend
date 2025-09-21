@@ -8102,7 +8102,7 @@ function getSelectedTraits() {
 
 												</div>
 												<span id="warning_icon_0" style="display:none; color: red; font-size: 20px; margin-left: 10px;">&#9888;</span>
-												<span id="warning_message_0" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是17到25，請檢查您的輸入是否正確。若確定正確請忽略此警告。</span>
+												<span id="warning_message_0" class="warning-message" style="display:none; color: red; font-size: 12px; margin-left: 10px;">這個數值通常是20到25，請檢查您的輸入是否正確。若確定正確請忽略此警告。請輸入正確年紀。</span>
 
 											</div>
 										</div>
@@ -9905,6 +9905,24 @@ function getSelectedTraits() {
 
 										<div class="tool-container container-input container-3 row">
 											<div class="col-xs-12 col-sm-6">
+												<h3>非常認識自己</h3>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_self" value="0" id="trait_self_n" class="tool-input">
+													<label for="trait_self_n">No</label>
+												</div>
+											</div>
+											<div class="col-xs-6 col-sm-3">
+												<div class="tool-option">
+													<input type="radio" name="trait_self" value="13" id="trait_self_y" class="tool-input">
+													<label for="trait_self_y">Yes<span class="points">+13</span></label>
+												</div>
+											</div>
+										</div>
+										
+										<div class="tool-container container-input container-3 row">
+											<div class="col-xs-12 col-sm-6">
 												<h3>嫁雞隨雞，嫁狗隨狗</h3>
 											</div>
 											<div class="col-xs-6 col-sm-3">
@@ -10697,7 +10715,7 @@ function getSelectedTraits() {
 	const warningIcon = document.getElementById('warning_icon_0');
 	const pointsElement = document.querySelector('.points');
 
-    if (ageValue >= 17 && ageValue <= 25) {
+    if (ageValue >= 20 && ageValue <= 25) {
         console.log('Age is within the valid range.');
         // Additional actions like enabling submit button can be added here
 		warningMessage.style.display = 'none';
