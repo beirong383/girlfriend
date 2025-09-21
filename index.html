@@ -18,6 +18,14 @@
 		function gtag() { dataLayer.push(arguments); }
 		gtag('js', new Date());
 		gtag('config', 'G-WVK41JBQ8K');
+
+  // Update text dynamically after the page loads
+  document.addEventListener("DOMContentLoaded", () => {
+    // Replace placeholders in the HTML
+    document.querySelectorAll(".cutoff").forEach(el => {
+      el.textContent = CUTOFF;
+    });
+  });
 	</script>
 
 	<title>賴德德徵女友</title>
@@ -7737,7 +7745,7 @@
 								跟我交往的好處: 妳要什麼都給妳 會特別珍惜妳 聽妳分享心事 會越來越喜歡妳 絕不會提分手<br>
 								<br>
 								條件：<br>
-								以下的加起來超過861.5分的女生歡迎來Instagram私訊我，告訴我你吸引我的地方 (建議先用小帳)<br />
+								以下的加起來超過<span class="cutoff"></span>分的女生歡迎來Instagram私訊我，告訴我你吸引我的地方 (建議先用小帳)<br />
 								<br />
 								無壓力交友。只要妳一天沒有傳訊息，我就會刪除妳，絕不糾纏或騷擾。<br />
 								<blockquote class="instagram-media" data-instgrm-captioned
@@ -9953,7 +9961,7 @@ function getSelectedTraits() {
 												</h3>
 												<p>category is based on score</p>
 												<ul>
-													<li>&gt;861.5分: 妳是我的理想型！</li>
+													<li>&gt;<span class="cutoff"></span>分: 妳是我的理想型！</li>
 													<li>&gt;905分: 破紀錄！</li>
 												</ul>
 											</div>
