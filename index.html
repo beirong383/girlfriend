@@ -26,6 +26,13 @@
       el.textContent = CUTOFF;
     });
   });
+  // Update text dynamically after the page loads
+  document.addEventListener("DOMContentLoaded", () => {
+    // Replace placeholders in the HTML
+    document.querySelectorAll(".record").forEach(el => {
+      el.textContent = RECORD;
+    });
+  });
 	</script>
 
 	<title>賴德德徵女友</title>
@@ -9962,7 +9969,7 @@ function getSelectedTraits() {
 												<p>category is based on score</p>
 												<ul>
 													<li>&gt;<span class="cutoff"></span>分: 妳是我的理想型！</li>
-													<li>&gt;905分: 破紀錄！</li>
+													<li>&gt;<span class="record"></span>分: 破紀錄！</li>
 												</ul>
 											</div>
 										</div>
