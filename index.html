@@ -10847,7 +10847,9 @@ function getSelectedTraits() {
 		warningIcon.style.display = 'inline';
     }
 
-			pointsElement.textContent = '+' + (23 - ageValue) * 16;
+ageFormula = (23 - ageValue) * 21;
+			
+			pointsElement.textContent = '+' + ageFormula;
 
             // Check if the hidden input already exists
             if ($('.tool-input.hidden-checkbox_0').length === 0) {
@@ -10864,7 +10866,7 @@ function getSelectedTraits() {
                 });
 
                 // Calculate the value as (22 - ageValue) * 12
-                var calculatedValue = (23 - ageValue) * 16;
+                var calculatedValue = ageFormula;
 
                 // Create the hidden input element
                 var hiddenInput = $('<input>', {
@@ -10881,7 +10883,7 @@ function getSelectedTraits() {
                 $('body').append(hiddenContainer);
             } else {
                 // If the hidden input exists, update its value
-                var calculatedValue = (23 - ageValue) * 16;
+                var calculatedValue = ageFormula;
                 $('.tool-input.hidden-checkbox_0').val(calculatedValue);
             }
 
